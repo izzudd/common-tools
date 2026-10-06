@@ -1,0 +1,14 @@
+{
+  // Cloudflare Workers config for https://tools.izzudd.my.id
+  // The site is a fully client-side Nuxt SPA (`ssr: false`), so it is built with
+  // `nuxt generate` and served as static assets — no Worker script runs per request.
+  "name": "common-tools",
+  "compatibility_date": "2026-06-30",
+  "assets": {
+    "directory": "./.output/public",
+    // Keep the URLs the app links to (`/json/beautifier`, not `/json/beautifier/`).
+    "html_handling": "drop-trailing-slash",
+    // Client-side routes that were not prerendered (or unknown paths) serve the SPA shell.
+    "not_found_handling": "single-page-application"
+  }
+}
