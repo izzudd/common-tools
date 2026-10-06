@@ -1,64 +1,163 @@
-# Nuxt Starter Template
+# Common Tools (DevPocket) 🧰
 
-[![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
+[![Nuxt](https://img.shields.io/badge/Nuxt-4.x-00DC82?logo=nuxt&labelColor=020420)](https://nuxt.com)
+[![Nuxt UI](https://img.shields.io/badge/Nuxt_UI-v4-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38BDF8?logo=tailwindcss&labelColor=0f172a)](https://tailwindcss.com)
+[![Bun](https://img.shields.io/badge/Bun-1.3+-fbf0df?logo=bun&labelColor=18181b)](https://bun.sh)
+[![Client-Side Only](https://img.shields.io/badge/Execution-100%25_Client--Side-10B981?logo=shield&labelColor=064e3b)](#-privacy--security-guarantee)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Use this template to get started with [Nuxt UI](https://ui.nuxt.com) quickly.
+A fast, lightweight, and privacy-first suite of client-side developer utilities. Format JSON, inspect complex payload trees, sanitize strings, encode/decode data, and manipulate text—all without sending a single byte over the wire.
 
-- [Live demo](https://starter-template.nuxt.dev/)
-- [Documentation](https://ui.nuxt.com/docs/getting-started/installation/nuxt)
+---
 
-<a href="https://starter-template.nuxt.dev/" target="_blank">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://ui.nuxt.com/assets/templates/nuxt/starter-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="https://ui.nuxt.com/assets/templates/nuxt/starter-light.png">
-    <img alt="Nuxt Starter Template" src="https://ui.nuxt.com/assets/templates/nuxt/starter-light.png" width="830" height="466">
-  </picture>
-</a>
+## 🔒 Privacy & Security Guarantee
 
-> The starter template for Vue is on https://github.com/nuxt-ui-templates/starter-vue.
+Most online formatters and conversion utilities log your requests or route your payloads through remote servers. **Common Tools runs 100% in your browser**:
 
-## Quick Start
+- **Zero Network Transmission**: All operations rely purely on native browser Web APIs and local JavaScript.
+- **Zero Telemetry & Analytics**: No third-party trackers, no cookies, and no logging scripts.
+- **Isolated Component State**: Input states are stored strictly in local page memory and clear immediately on navigation, ensuring credentials, tokens, and sensitive internal payloads stay secure.
 
-```bash [Terminal]
-npm create nuxt@latest -- -t ui
-```
+---
 
-## Deploy your own
+## ✨ Features & Included Utilities
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-name=starter&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Fstarter&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fnuxt%2Fstarter-dark.png&demo-url=https%3A%2F%2Fstarter-template.nuxt.dev%2F&demo-title=Nuxt%20Starter%20Template&demo-description=A%20minimal%20template%20to%20get%20started%20with%20Nuxt%20UI.)
+### 1. JSON Tools (`/json/*`)
+- **Beautifier & Minifier (`/json/beautifier`)**:
+  - Indent with 2 spaces, 4 spaces, or tabs.
+  - Minify and compress payloads into single lines.
+  - Alphabetically sort keys recursively.
+  - Instant syntax validation with informative inline error pointers.
+- **Interactive Visualizer (`/json/visualizer`)**:
+  - Hierarchical, collapsible tree node view.
+  - Color-coded type indicators (`string`, `number`, `boolean`, `null`, `array`, `object`).
+  - Search and filter keys or values across deeply nested objects.
+  - Expand/collapse all nodes with a single click.
+- **Stringify & JSONify (`/json/stringify`)**:
+  - Convert raw JSON into escaped, inline JSON strings (ideal for `.env`, CLI args, or JSON-inside-JSON).
+  - Unescape serialized strings back into clean, parsed JSON objects.
 
-## Setup
+### 2. String Tools (`/string/*`)
+- **Escaper & Unescaper (`/string/escaper`)**:
+  - **HTML Entities**: Encode special characters (`<`, `>`, `&`, `"`, `'`) or decode back to raw HTML.
+  - **URL / URI Components**: Encode/decode query params with `encodeURIComponent` & `encodeURI`.
+  - **Regular Expressions**: Escape regex meta-characters (`.*+?^${}()|[]\`) for dynamic pattern builders.
+  - **C-Style Slashes**: Handle quotes, backslashes, tabs, and newlines.
+  - **Base64**: UTF-8 safe Base64 encoding and decoding.
+- **Whitespace Remover (`/string/whitespace`)**:
+  - Trim leading and trailing whitespace.
+  - Collapse multiple spaces into single spaces.
+  - Strip tabs and extra blank lines.
+  - Remove all whitespace entirely.
 
-Make sure to install the dependencies:
+### 3. Ergonomic Developer Experience
+- **Sample Data Pre-loaders**: Quickly test each tool with built-in realistic payloads.
+- **Copy to Clipboard**: One-click copying with automatic toast notifications.
+- **Quick Keyboard Search**: Search tools by name, description, or keyword tags right from the home dashboard.
+- **Dark & Light Mode**: High-contrast, easy-on-the-eyes interface built on Nuxt UI.
+- **Mobile Responsive**: Full sidebar navigation on desktop with slideover drawer support on mobile.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Nuxt 4](https://nuxt.com/) (Single Page Application, `ssr: false`)
+- **UI Components & Icons**: [@nuxt/ui](https://ui.nuxt.com/) v4 & [@iconify-json/lucide](https://lucide.dev/)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
+- **Runtime & Package Manager**: [Bun](https://bun.sh/)
+- **Language**: TypeScript (Strict Mode)
+- **Linting & Formatting**: ESLint with `@nuxt/eslint`
+
+---
+
+## 🚀 Getting Started
+
+Ensure you have [Bun](https://bun.sh) installed (`>= 1.3.0`).
+
+### 1. Clone the repository
 
 ```bash
-pnpm install
+git clone git@github.com:izzudd/common-tools.git
+cd common-tools
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
+### 2. Install dependencies
 
 ```bash
-pnpm dev
+bun install
 ```
 
-## Production
-
-Build the application for production:
+### 3. Start development server
 
 ```bash
-pnpm build
+bun run dev
 ```
 
-Locally preview production build:
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## 📦 Build & Production
+
+Generate a static client-side bundle:
 
 ```bash
-pnpm preview
+bun run build
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Preview the production build locally:
 
-## Renovate integration
+```bash
+bun run preview
+```
 
-Install [Renovate GitHub app](https://github.com/apps/renovate/installations/select_target) on your repository and you are good to go.
+### Code Quality & Verification
+
+Run linter:
+
+```bash
+bun run lint
+```
+
+Run TypeScript verification:
+
+```bash
+bun run typecheck
+```
+
+---
+
+## 📁 Project Structure
+
+```text
+common-tools/
+├── app/
+│   ├── assets/css/        # Tailwind CSS entrypoint
+│   ├── components/        # Reusable components (ToolHeader, etc.)
+│   ├── config/            # Centralized tool registry (tools.ts)
+│   ├── layouts/           # Default layout with responsive sidebar
+│   ├── pages/             # Tool pages & home directory
+│   │   ├── index.vue      # Tool search & catalog dashboard
+│   │   ├── json/          # JSON utilities
+│   │   └── string/        # String utilities
+│   └── types/             # Shared TypeScript interfaces
+├── nuxt.config.ts         # Nuxt 4 configuration (SSR disabled)
+├── package.json
+└── README.md
+```
+
+---
+
+## 🤝 Adding a New Tool
+
+1. Create a page component in `app/pages/<category>/<tool-name>.vue`.
+2. Register the tool metadata (name, path, icon, keywords) in `app/config/tools.ts`.
+3. Use the shared `<ToolHeader>` component for consistent action buttons (Sample, Clear, Copy).
+4. Run `bun run lint` and `bun run typecheck` to verify your changes.
+
+---
+
+## 📄 License
+
+This project is open-source and available under the [MIT License](LICENSE).
