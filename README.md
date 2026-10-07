@@ -50,6 +50,13 @@ Most online formatters and conversion utilities log your requests or route your 
   - Collapse multiple spaces into single spaces.
   - Strip tabs and extra blank lines.
   - Remove all whitespace entirely.
+- **Slugify & URL Normalizer (`/string/slugify`)**:
+  - Generate clean, SEO-optimized URL slugs from titles and text.
+  - Customizable separators (hyphen, underscore, dot, slash, none, or custom).
+  - Casing options (lowercase, uppercase, title-case, preserve original).
+  - Accents and diacritics transliteration (`NFKD` normalization, special character mapping).
+  - Common English stop words removal and max length truncation with word boundaries.
+  - Multi-line batch processing mode and instant copy cards for kebab, snake, camel, pascal, constant, and dot cases.
 
 ### 3. Ergonomic Developer Experience
 - **Sample Data Pre-loaders**: Quickly test each tool with built-in realistic payloads.

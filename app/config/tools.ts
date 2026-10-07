@@ -57,6 +57,15 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
         path: '/string/whitespace',
         icon: 'i-lucide-scissors',
         keywords: ['string', 'whitespace', 'trim', 'strip', 'spaces', 'tabs', 'lines', 'clean']
+      },
+      {
+        id: 'string-slugify',
+        name: 'Slugify & URL Normalizer',
+        description: 'Generate clean, URL-safe slugs with customizable separators, transliteration, and case formatting',
+        path: '/string/slugify',
+        icon: 'i-lucide-link',
+        badge: 'SEO',
+        keywords: ['string', 'slug', 'slugify', 'url', 'seo', 'permalink', 'kebab-case', 'normalize', 'clean-url']
       }
     ]
   }
