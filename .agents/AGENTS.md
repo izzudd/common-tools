@@ -10,7 +10,7 @@
 - **Page State Isolation**: Avoid global stores for user input text. Maintain working state exclusively within each page component's local `ref`s so navigating away resets input and prevents cross-tool data pollution.
 - **Component Ergonomics**: Every tool page includes standard `ToolHeader` offering "Load Sample Data", "Clear", and "Copy to Clipboard" with toast feedback and graceful inline error recovery.
 - **Extensible Navigation**: Tool catalog is centrally managed via `app/config/tools.ts`, automatically powering both desktop collapsible sidebar and responsive mobile slideover drawers.
-- **Collapsible Sidebar Ergonomics**: When using `USidebar` with `collapsible="icon"`, always bind slot states (`#header="{ state }"`, `#default="{ state }"`, `#footer="{ state }"`) and pass `:collapsed="state === 'collapsed'"` with `:tooltip="true"` and `:popover="true"` to `UNavigationMenu` so category popovers and tooltips render cleanly without overflowing horizontal rail bounds.
+- **Collapsible Sidebar Ergonomics**: When using `USidebar` with `collapsible="icon"`, always bind slot states (`#header="{ state }"`, `#default="{ state }"`, `#footer="{ state }"`) and pass `:collapsed="state === 'collapsed'"` with `:tooltip="true"` and `:popover="true"` to `UNavigationMenu`. Additionally, pass `state === 'collapsed' && 'justify-center'` in `ui.link` so navigation icons are centered along the vertical middle axis of the rail rather than resting on the left.
 
 ## Constraints
 - Do not introduce server persistence, remote databases, or backend mutations.
