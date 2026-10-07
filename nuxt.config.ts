@@ -13,6 +13,8 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  compatibilityDate: '2026-06-30',
+
   // Fully static output (`.output/public`) that Cloudflare serves straight from
   // its assets store — see wrangler.jsonc. Pinned explicitly because a CI
   // environment (Cloudflare Workers Builds) otherwise auto-switches Nitro to the
@@ -20,8 +22,6 @@ export default defineNuxtConfig({
   nitro: {
     preset: 'static'
   },
-
-  compatibilityDate: '2026-06-30',
 
   typescript: {
     strict: true

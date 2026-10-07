@@ -45,13 +45,14 @@ const currentTool = computed(() => {
       :ui="{
         container: 'h-full border-r border-default bg-neutral-100/60 dark:bg-neutral-900/40 backdrop-blur-md',
         inner: 'divide-transparent',
-        body: 'py-2 px-2'
+        body: 'py-2 px-2 group-data-[state=collapsed]/sidebar:px-1'
       }"
     >
-      <template #header>
+      <template #header="{ state }">
         <NuxtLink
           to="/"
           class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-neutral-500/10 transition-colors w-full overflow-hidden"
+          :class="state === 'collapsed' ? 'justify-center px-0' : ''"
         >
           <div class="size-8 rounded-lg bg-primary flex items-center justify-center text-white shrink-0 shadow-sm font-bold text-base">
             <UIcon
@@ -59,17 +60,24 @@ const currentTool = computed(() => {
               class="size-5"
             />
           </div>
-          <div class="flex flex-col truncate">
+          <div
+            v-if="state !== 'collapsed'"
+            class="flex flex-col truncate"
+          >
             <span class="font-bold tracking-tight text-sm text-highlighted">DevPocket</span>
             <span class="text-[10px] text-muted font-medium uppercase tracking-wider">Client Utilities</span>
           </div>
         </NuxtLink>
       </template>
 
-      <template #default>
+      <template #default="{ state }">
         <div class="space-y-4">
           <UNavigationMenu
+            :key="state"
             :items="navItems"
+            :collapsed="state === 'collapsed'"
+            :tooltip="true"
+            :popover="true"
             orientation="vertical"
             :ui="{
               link: 'text-xs py-1.5 px-2 rounded-lg font-medium transition-colors',
@@ -79,13 +87,28 @@ const currentTool = computed(() => {
         </div>
       </template>
 
-      <template #footer>
-        <div class="flex flex-col gap-2 p-2 border-t border-default w-full">
-          <div class="flex items-center justify-between text-xs text-muted">
+      <template #footer="{ state }">
+        <div
+          class="flex flex-col gap-2 p-2 border-t border-default w-full"
+          :class="state === 'collapsed' ? 'items-center px-0' : ''"
+        >
+          <div
+            v-if="state !== 'collapsed'"
+            class="flex items-center justify-between text-xs text-muted"
+          >
             <div class="flex items-center gap-1.5 text-[11px]">
               <span class="size-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>100% Client-Side</span>
             </div>
+            <UColorModeButton size="xs" />
+          </div>
+          <div
+            v-else
+            class="flex flex-col items-center gap-2"
+          >
+            <UTooltip text="100% Client-Side">
+              <span class="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            </UTooltip>
             <UColorModeButton size="xs" />
           </div>
         </div>
