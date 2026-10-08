@@ -37,6 +37,11 @@ Most online formatters and conversion utilities log your requests or route your 
 - **Stringify & JSONify (`/json/stringify`)**:
   - Convert raw JSON into escaped, inline JSON strings (ideal for `.env`, CLI args, or JSON-inside-JSON).
   - Unescape serialized strings back into clean, parsed JSON objects.
+- **Schema Builder & Generator (`/json/schema`)**:
+  - Create and customize JSON Schema (Draft-07, Draft 2020-12, Draft-04) through an interactive visual property tree.
+  - Infer complete JSON Schema automatically from pasted sample JSON payloads with smart type detection (format: `email`, `date-time`, `uri`, `uuid`).
+  - Configure constraints: required flags, min/max, string lengths, enums, descriptions, and strict `additionalProperties: false`.
+  - Instant dual export to standard **JSON Schema** or **TypeScript Interface** definitions.
 
 ### 2. String Tools (`/string/*`)
 - **Escaper & Unescaper (`/string/escaper`)**:
@@ -62,7 +67,20 @@ Most online formatters and conversion utilities log your requests or route your 
   - **Live Multi-Base Overview**: Instantaneous preview cards of all base representations with one-click copy.
   - **Number / Radix Conversion**: Convert integers (including arbitrary-precision BigInts) across Base 2, 8, 10, 16, 32, 36, 58, 62, and 64 simultaneously.
 
-### 3. Ergonomic Developer Experience
+### 3. Table & CSV Tools (`/table/*`)
+- **Table & CSV Editor (`/table/editor`)**:
+  - Review CSV, TSV, or spreadsheet clipboard copies (Ctrl+C / Ctrl+V from Excel / Google Sheets) in an interactive data grid.
+  - Inline column header editing and column reordering / swapping.
+  - Column deletion, addition, and cell editing.
+  - Search, cell filtering, sorting, and pagination.
+  - Instant exports to CSV, TSV, JSON, JSONL, Markdown, HTML, and SQL.
+- **CSV to SQL & Multi-Format Converter (`/table/converter`)**:
+  - Convert CSV / TSV into production-ready SQL for **MySQL**, **PostgreSQL**, **SQLite**, and **MSSQL**.
+  - Smart automatic data type inference (`INT`, `DECIMAL`, `BOOLEAN`, `DATETIME`, `VARCHAR`/`TEXT`).
+  - Optional `CREATE TABLE`, `DROP TABLE IF EXISTS`, and configurable multi-row `INSERT` batches.
+  - Export to **JSON Lines (`.jsonl`)**, **JSON Array**, **TSV**, **Markdown**, **HTML Table**, and **YAML**.
+
+### 4. Ergonomic Developer Experience
 - **Sample Data Pre-loaders**: Quickly test each tool with built-in realistic payloads.
 - **Copy to Clipboard**: One-click copying with automatic toast notifications.
 - **Quick Keyboard Search**: Search tools by name, description, or keyword tags right from the home dashboard.

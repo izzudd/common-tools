@@ -28,19 +28,11 @@ const filteredTools = computed(() => {
     <!-- Hero Section -->
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-neutral-900 to-neutral-800 text-white p-8 md:p-10 shadow-lg border border-neutral-700/60">
       <div class="relative z-10 max-w-2xl space-y-4">
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-medium">
-          <UIcon
-            name="i-lucide-shield-check"
-            class="size-4"
-          />
-          100% Client-Side • Zero Tracking • Zero Network Calls
-        </div>
-
         <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">
           DevPocket
         </h1>
         <p class="text-neutral-300 text-sm md:text-base leading-relaxed">
-          Fast, elegant, and secure browser-based developer utilities. All data transformations happen strictly in your browser with zero latency and zero data leakage.
+          Fast, elegant, and secure browser-based developer utilities. All data transformations happen with zero latency.
         </p>
 
         <!-- Quick Search -->
@@ -161,29 +153,6 @@ const filteredTools = computed(() => {
         size="sm"
         @click="searchQuery = ''; selectedCategory = 'all'"
       />
-    </div>
-
-    <!-- Client-Side Guarantee Card -->
-    <div class="p-5 rounded-xl border border-default bg-neutral-100/30 dark:bg-neutral-900/30 flex flex-col md:flex-row items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">
-          <UIcon
-            name="i-lucide-lock"
-            class="size-5"
-          />
-        </div>
-        <div>
-          <h4 class="font-semibold text-sm text-highlighted">
-            Privacy & Security Guaranteed
-          </h4>
-          <p class="text-xs text-muted mt-0.5">
-            Your JSON tokens, keys, and confidential payload strings never leave your device.
-          </p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2 shrink-0 text-xs font-mono text-muted">
-        <span>Runs 100% in Browser</span>
-      </div>
     </div>
   </div>
 </template>

@@ -22,8 +22,7 @@ const navItems = computed<NavigationMenuItem[]>(() => {
       label: tool.name,
       icon: tool.icon,
       to: tool.path,
-      active: route.path === tool.path,
-      badge: tool.badge
+      active: route.path === tool.path
     }))
   }))
 
@@ -92,28 +91,35 @@ const currentTool = computed(() => {
 
       <template #footer="{ state }">
         <div
-          class="flex flex-col gap-2 p-2 border-t border-default w-full"
-          :class="state === 'collapsed' ? 'items-center px-0' : ''"
+          v-if="state !== 'collapsed'"
+          class="p-2.5 border-t border-default w-full text-xs text-muted text-center"
         >
-          <div
-            v-if="state !== 'collapsed'"
-            class="flex items-center justify-between text-xs text-muted"
+          <span>Made with magic by </span>
+          <NuxtLink
+            to="https://izzudd.my.id"
+            target="_blank"
+            class="font-semibold text-highlighted hover:text-primary transition-colors underline underline-offset-2"
           >
-            <div class="flex items-center gap-1.5 text-[11px]">
-              <span class="size-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>100% Client-Side</span>
-            </div>
-            <UColorModeButton size="xs" />
-          </div>
-          <div
-            v-else
-            class="flex flex-col items-center gap-2"
-          >
-            <UTooltip text="100% Client-Side">
-              <span class="size-2 rounded-full bg-emerald-500 animate-pulse" />
-            </UTooltip>
-            <UColorModeButton size="xs" />
-          </div>
+            Izzudd
+          </NuxtLink>
+        </div>
+        <div
+          v-else
+          class="flex items-center justify-center p-2 border-t border-default w-full"
+        >
+          <UTooltip text="Made with magic by Izzudd">
+            <NuxtLink
+              to="https://izzudd.my.id"
+              target="_blank"
+              aria-label="Made with magic by Izzudd"
+              class="p-1 rounded-md text-muted hover:text-primary transition-colors flex items-center justify-center"
+            >
+              <UIcon
+                name="i-lucide-sparkles"
+                class="size-4"
+              />
+            </NuxtLink>
+          </UTooltip>
         </div>
       </template>
     </USidebar>

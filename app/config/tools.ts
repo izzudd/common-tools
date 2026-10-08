@@ -32,6 +32,15 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
         path: '/json/stringify',
         icon: 'i-lucide-quote',
         keywords: ['json', 'stringify', 'escape', 'unescape', 'serialize', 'deserialize', 'parse']
+      },
+      {
+        id: 'json-schema',
+        name: 'Schema Builder & Generator',
+        description: 'Build JSON Schema interactively or infer automatically from sample JSON payloads',
+        path: '/json/schema',
+        icon: 'i-lucide-file-json',
+        badge: 'Generator',
+        keywords: ['json', 'schema', 'json-schema', 'draft-07', 'types', 'builder', 'generator', 'typescript']
       }
     ]
   },
@@ -75,6 +84,32 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
         icon: 'i-lucide-binary',
         badge: 'Multi-Base',
         keywords: ['string', 'base', 'base64', 'base32', 'base58', 'base62', 'binary', 'hex', 'octal', 'encode', 'decode', 'radix', 'convert']
+      }
+    ]
+  },
+  {
+    id: 'table',
+    name: 'Table & CSV Tools',
+    description: 'Inspect, edit columns, swap headers, and convert tabular data to SQL, JSONL, and TSV',
+    icon: 'i-lucide-table',
+    tools: [
+      {
+        id: 'table-editor',
+        name: 'Table & CSV Editor',
+        description: 'Review CSV/clipboard data in an interactive table, rename headers, and swap columns',
+        path: '/table/editor',
+        icon: 'i-lucide-table-properties',
+        badge: 'Interactive',
+        keywords: ['table', 'csv', 'tsv', 'spreadsheet', 'grid', 'swap', 'header', 'editor', 'excel']
+      },
+      {
+        id: 'table-converter',
+        name: 'CSV to SQL & Multi-Format',
+        description: 'Convert CSV into SQL (MySQL, PostgreSQL, SQLite, MSSQL), JSONL, TSV, Markdown, and JSON',
+        path: '/table/converter',
+        icon: 'i-lucide-database',
+        badge: 'Multi-Format',
+        keywords: ['csv', 'sql', 'mysql', 'postgres', 'sqlite', 'mssql', 'jsonl', 'tsv', 'converter', 'export', 'insert']
       }
     ]
   }
