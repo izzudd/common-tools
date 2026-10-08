@@ -40,7 +40,16 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
         path: '/json/schema',
         icon: 'i-lucide-file-json',
         badge: 'Generator',
-        keywords: ['json', 'schema', 'json-schema', 'draft-07', 'types', 'builder', 'generator', 'typescript']
+        keywords: ['json', 'schema', 'json-schema', 'draft-07', 'builder', 'generator', 'spec']
+      },
+      {
+        id: 'json-type-generator',
+        name: 'JSON to Type & Model',
+        description: 'Convert JSON payloads into type-safe models: Zod, Pydantic, Python Dataclass/TypedDict, Go Structs, and TypeScript',
+        path: '/json/type-generator',
+        icon: 'i-lucide-code-xml',
+        badge: 'Multi-target',
+        keywords: ['json', 'zod', 'pydantic', 'dataclass', 'typeddict', 'python', 'go', 'golang', 'struct', 'typescript', 'types', 'model']
       }
     ]
   },

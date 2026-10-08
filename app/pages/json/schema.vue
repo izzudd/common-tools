@@ -4,16 +4,13 @@ import type { SchemaField, SchemaDraft } from '~/types/schema'
 import {
   generateFieldId,
   inferSchemaFromData,
-  buildRootJsonSchema,
-  buildTypeScriptDefinition
+  buildRootJsonSchema
 } from '~/utils/schema'
 
 type ActiveView = 'builder' | 'infer'
-type OutputView = 'schema' | 'typescript'
 
 // Page-isolated state
 const activeView = ref<ActiveView>('builder')
-const outputView = ref<OutputView>('schema')
 
 // Schema Config
 const schemaTitle = ref('UserPayload')
@@ -167,14 +164,7 @@ const generatedSchema = computed(() => {
   })
 })
 
-const generatedTypeScript = computed(() => {
-  const safeName = (schemaTitle.value.trim().replace(/[^\w\d]/g, '') || 'RootObject')
-  return buildTypeScriptDefinition(rootField.value, safeName)
-})
-
-const currentOutputCode = computed(() => {
-  return outputView.value === 'schema' ? generatedSchema.value : generatedTypeScript.value
-})
+const currentOutputCode = computed(() => generatedSchema.value)
 
 function markAllRequired(required: boolean) {
   function applyReq(field: SchemaField) {
@@ -198,12 +188,8 @@ function markAllRequired(required: boolean) {
 }
 
 function downloadFile() {
-  const isSchema = outputView.value === 'schema'
-  const ext = isSchema ? 'json' : 'ts'
-  const filename = `${schemaTitle.value.toLowerCase() || 'schema'}.${ext}`
-  const mime = isSchema ? 'application/json' : 'text/typescript'
-
-  const blob = new Blob([currentOutputCode.value], { type: mime })
+  const filename = `${schemaTitle.value.toLowerCase() || 'schema'}.json`
+  const blob = new Blob([currentOutputCode.value], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -373,9 +359,9 @@ const stats = computed(() => {
         </div>
       </div>
       <div>
-        <span class="text-muted block text-[11px]">Output Mode</span>
-        <div class="font-mono mt-0.5 font-semibold text-highlighted capitalize">
-          {{ outputView }}
+        <span class="text-muted block text-[11px]">Format</span>
+        <div class="font-mono mt-0.5 font-semibold text-highlighted">
+          JSON Schema
         </div>
       </div>
     </div>
@@ -461,24 +447,15 @@ const stats = computed(() => {
       <!-- Right Column: Live Generated Output (5 Cols) -->
       <div class="lg:col-span-5 flex flex-col rounded-xl border border-default bg-neutral-100/30 dark:bg-neutral-900/40 overflow-hidden sticky top-20">
         <div class="flex items-center justify-between px-3.5 py-2.5 border-b border-default bg-neutral-100/60 dark:bg-neutral-900/60 text-xs font-medium text-muted">
-          <!-- Output Format Tabs -->
-          <div class="inline-flex rounded border border-default p-0.5 bg-neutral-100 dark:bg-neutral-900 text-[11px]">
-            <button
-              type="button"
-              class="px-2.5 py-0.5 rounded transition-all font-mono"
-              :class="outputView === 'schema' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
-              @click="outputView = 'schema'"
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-[11px] font-semibold text-highlighted uppercase tracking-wider">Generated JSON Schema</span>
+            <UBadge
+              color="neutral"
+              variant="subtle"
+              size="xs"
             >
-              JSON Schema
-            </button>
-            <button
-              type="button"
-              class="px-2.5 py-0.5 rounded transition-all font-mono"
-              :class="outputView === 'typescript' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
-              @click="outputView = 'typescript'"
-            >
-              TypeScript Interface
-            </button>
+              {{ schemaDraft }}
+            </UBadge>
           </div>
 
           <div class="flex items-center gap-1.5">
@@ -502,12 +479,10 @@ const stats = computed(() => {
         </div>
 
         <div class="p-2 flex-1">
-          <textarea
-            :value="currentOutputCode"
-            readonly
-            rows="22"
-            class="w-full p-3 bg-transparent font-mono text-xs focus:outline-none resize-y text-highlighted"
-            spellcheck="false"
+          <CodeHighlightViewer
+            :code="currentOutputCode"
+            lang="json"
+            max-height="30rem"
           />
         </div>
       </div>
