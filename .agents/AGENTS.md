@@ -7,7 +7,7 @@
 
 ## Workflows
 - **Client-Side Only**: Nuxt configuration must specify `ssr: false` to guarantee 100% in-browser execution with zero backend persistence, tracking, or telemetry.
-- **Page State Isolation**: Avoid global stores for user input text. Maintain working state exclusively within each page component's local `ref`s so navigating away resets input and prevents cross-tool data pollution.
+- **Page State Persistence & Isolation**: Maintain working state within namespaced `localStorage` drafts (`devpocket:draft:<tool-id>`) so navigating between tools or closing tabs retains input safely without cross-tool pollution. When the user clicks "Clear", the local storage draft is wiped clean.
 - **Component Ergonomics**: Every tool page includes standard `ToolHeader` offering "Load Sample Data", "Clear", and "Copy to Clipboard" with toast feedback and graceful inline error recovery.
 - **Extensible Navigation**: Tool catalog is centrally managed via `app/config/tools.ts`, automatically powering both desktop collapsible sidebar and responsive mobile slideover drawers.
 - **Collapsible Sidebar Ergonomics**: When using `USidebar` with `collapsible="icon"`, always bind slot states (`#header="{ state }"`, `#default="{ state }"`, `#footer="{ state }"`) and pass `:collapsed="state === 'collapsed'"` with `:tooltip="true"` and `:popover="true"` to `UNavigationMenu`. Additionally, pass `state === 'collapsed' && 'justify-center'` in `ui.link` so navigation icons are centered along the vertical middle axis of the rail rather than resting on the left.

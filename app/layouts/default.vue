@@ -80,7 +80,7 @@ const currentTool = computed(() => {
             orientation="vertical"
             :ui="{
               link: [
-                'text-xs py-1.5 px-2 rounded-lg font-medium transition-colors',
+                'text-xs py-1.5 px-2.5 rounded-lg font-medium transition-colors',
                 state === 'collapsed' && 'justify-center'
               ],
               childLink: 'text-xs py-1.5 px-2'

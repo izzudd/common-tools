@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useClipboardAction } from '~/composables/useClipboardAction'
+import { useToolDraft } from '~/composables/useToolDraft'
 import type { TargetLanguage, CodegenOptions } from '~/types/codegen'
 import type { SchemaField } from '~/types/schema'
 import { inferSchemaFromData } from '~/utils/schema'
@@ -8,21 +9,36 @@ import { generateCode } from '~/utils/codegen'
 
 type InputMode = 'auto' | 'json' | 'schema'
 
-// Page-isolated state (per project workflow rules)
-const inputMode = ref<InputMode>('auto')
-const rawInput = ref('')
-const parseError = ref<string | null>(null)
-const selectedTarget = ref<TargetLanguage>('zod')
-const rootName = ref('UserPayload')
+// Persistent tool draft in localStorage
+interface TypeGeneratorDraft {
+  inputMode: InputMode
+  rawInput: string
+  selectedTarget: TargetLanguage
+  rootName: string
+  zodInferType: boolean
+  pythonOptionalUnion: boolean
+  pythonSnakeCase: boolean
+  goOmitEmpty: boolean
+  goPointerOptional: boolean
+  tsTypeOrInterface: 'interface' | 'type'
+  tsReadonly: boolean
+}
 
-// Options
-const zodInferType = ref(true)
-const pythonOptionalUnion = ref(true) // Python 3.10+ (T | None)
-const pythonSnakeCase = ref(true)
-const goOmitEmpty = ref(true)
-const goPointerOptional = ref(true)
-const tsTypeOrInterface = ref<'interface' | 'type'>('interface')
-const tsReadonly = ref(false)
+const { state: draft, clearDraft } = useToolDraft<TypeGeneratorDraft>('json-type-generator', () => ({
+  inputMode: 'auto',
+  rawInput: '',
+  selectedTarget: 'zod',
+  rootName: 'UserPayload',
+  zodInferType: true,
+  pythonOptionalUnion: true,
+  pythonSnakeCase: true,
+  goOmitEmpty: true,
+  goPointerOptional: true,
+  tsTypeOrInterface: 'interface',
+  tsReadonly: false
+}))
+
+const parseError = ref<string | null>(null)
 
 const { copied, copyToClipboard } = useClipboardAction()
 const toast = useToast()
@@ -125,7 +141,7 @@ const sampleSchemaPayload = `{
 }`
 
 function loadSample() {
-  rawInput.value = sampleJsonPayload
+  draft.value.rawInput = sampleJsonPayload
   parseError.value = null
   toast.add({
     title: 'Sample JSON Loaded',
@@ -136,7 +152,7 @@ function loadSample() {
 }
 
 function loadSampleSchema() {
-  rawInput.value = sampleSchemaPayload
+  draft.value.rawInput = sampleSchemaPayload
   parseError.value = null
   toast.add({
     title: 'Sample JSON Schema Loaded',
@@ -147,17 +163,23 @@ function loadSampleSchema() {
 }
 
 function clearAll() {
-  rawInput.value = ''
+  clearDraft()
   parseError.value = null
+  toast.add({
+    title: 'Cleared',
+    description: 'Draft reset and local cache wiped clean',
+    color: 'neutral',
+    icon: 'i-lucide-trash-2'
+  })
 }
 
 const parsedJsonData = computed<{ data: unknown, isSchema: boolean } | null>(() => {
-  const raw = rawInput.value.trim()
+  const raw = draft.value.rawInput.trim()
   if (!raw) return null
   try {
     const parsed = JSON.parse(raw)
-    const isSchema = inputMode.value === 'schema'
-      || (inputMode.value === 'auto' && isJsonSchemaDocument(parsed))
+    const isSchema = draft.value.inputMode === 'schema'
+      || (draft.value.inputMode === 'auto' && isJsonSchemaDocument(parsed))
     return { data: parsed, isSchema }
   } catch {
     return null
@@ -175,60 +197,64 @@ const inferredRootField = computed<SchemaField | null>(() => {
   if (isSchema) {
     const title = (parsed && typeof parsed === 'object' && typeof (parsed as Record<string, unknown>).title === 'string' && (parsed as Record<string, unknown>).title)
       ? String((parsed as Record<string, unknown>).title).trim()
-      : (rootName.value || 'Root')
+      : (draft.value.rootName || 'Root')
     return parseJsonSchemaToField(title, parsed, true)
   } else {
-    return inferSchemaFromData(rootName.value || 'Root', parsed, true)
+    return inferSchemaFromData(draft.value.rootName || 'Root', parsed, true)
   }
 })
 
 // Validation watcher
-watch(rawInput, (val) => {
-  const raw = val.trim()
-  if (!raw) {
-    parseError.value = null
-    return
-  }
-  try {
-    JSON.parse(raw)
-    parseError.value = null
-  } catch (err: unknown) {
-    parseError.value = err instanceof Error ? err.message : 'Invalid JSON format'
-  }
-}, { immediate: true })
+watch(
+  () => draft.value.rawInput,
+  (val) => {
+    const raw = val.trim()
+    if (!raw) {
+      parseError.value = null
+      return
+    }
+    try {
+      JSON.parse(raw)
+      parseError.value = null
+    } catch (err: unknown) {
+      parseError.value = err instanceof Error ? err.message : 'Invalid JSON format'
+    }
+  },
+  { immediate: true }
+)
 
 const generatedOutput = computed<string>(() => {
   if (!inferredRootField.value) {
-    if (!rawInput.value.trim()) {
+    if (!draft.value.rawInput.trim()) {
       return '// Paste or type valid JSON or JSON Schema on the left panel to generate models'
     }
     return `// Syntax error in input:\n// ${parseError.value || 'Invalid JSON'}`
   }
 
   const codegenOpts: CodegenOptions = {
-    rootName: rootName.value || 'Root',
-    zodInferType: zodInferType.value,
-    pythonOptionalUnion: pythonOptionalUnion.value,
-    pythonSnakeCase: pythonSnakeCase.value,
-    goOmitEmpty: goOmitEmpty.value,
-    goPointerOptional: goPointerOptional.value,
-    tsTypeOrInterface: tsTypeOrInterface.value,
-    tsReadonly: tsReadonly.value
+    rootName: draft.value.rootName || 'Root',
+    zodInferType: draft.value.zodInferType,
+    pythonOptionalUnion: draft.value.pythonOptionalUnion,
+    pythonSnakeCase: draft.value.pythonSnakeCase,
+    goOmitEmpty: draft.value.goOmitEmpty,
+    goPointerOptional: draft.value.goPointerOptional,
+    tsTypeOrInterface: draft.value.tsTypeOrInterface,
+    tsReadonly: draft.value.tsReadonly
   }
 
   try {
-    return generateCode(selectedTarget.value, inferredRootField.value, codegenOpts)
+    return generateCode(draft.value.selectedTarget, inferredRootField.value, codegenOpts)
   } catch (err: unknown) {
     return `// Error generating code:\n// ${err instanceof Error ? err.message : String(err)}`
   }
 })
 
 function formatJsonInput() {
-  const raw = rawInput.value.trim()
+  const raw = draft.value.rawInput.trim()
   if (!raw) return
   try {
     const parsed = JSON.parse(raw)
-    rawInput.value = JSON.stringify(parsed, null, 2)
+    draft.value.rawInput = JSON.stringify(parsed, null, 2)
     toast.add({
       title: 'Formatted Input',
       description: 'Applied standard 2-space indentation',
@@ -250,7 +276,7 @@ async function copyOutput() {
   await copyToClipboard(generatedOutput.value)
   toast.add({
     title: 'Copied to Clipboard',
-    description: `Generated ${selectedTarget.value.toUpperCase()} definition ready for your codebase`,
+    description: `Generated ${draft.value.selectedTarget.toUpperCase()} definition ready for your codebase`,
     color: 'success',
     icon: 'i-lucide-check'
   })
@@ -268,8 +294,8 @@ function downloadFile() {
     typescript: 'ts'
   }
 
-  const ext = extensions[selectedTarget.value]
-  const filename = `${(rootName.value || 'models').toLowerCase()}.${ext}`
+  const ext = extensions[draft.value.selectedTarget]
+  const filename = `${(draft.value.rootName || 'models').toLowerCase()}.${ext}`
   const blob = new Blob([generatedOutput.value], { type: 'text/plain;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -297,7 +323,7 @@ const targetLangShiki = computed<string>(() => {
     go: 'go',
     typescript: 'typescript'
   }
-  return map[selectedTarget.value] || 'typescript'
+  return map[draft.value.selectedTarget] || 'typescript'
 })
 </script>
 
@@ -356,10 +382,10 @@ const targetLangShiki = computed<string>(() => {
           :key="target.id"
           :icon="target.icon"
           :label="target.label"
-          :color="selectedTarget === target.id ? 'primary' : 'neutral'"
-          :variant="selectedTarget === target.id ? 'solid' : 'ghost'"
+          :color="draft.selectedTarget === target.id ? 'primary' : 'neutral'"
+          :variant="draft.selectedTarget === target.id ? 'solid' : 'ghost'"
           size="sm"
-          @click="selectedTarget = target.id"
+          @click="draft.selectedTarget = target.id"
         />
       </div>
 
@@ -367,7 +393,7 @@ const targetLangShiki = computed<string>(() => {
       <div class="flex items-center gap-2">
         <span class="text-xs font-medium text-muted">Root Name:</span>
         <UInput
-          v-model="rootName"
+          v-model="draft.rootName"
           placeholder="e.g. UserPayload"
           size="sm"
           class="w-40 font-mono text-xs"
@@ -386,10 +412,10 @@ const targetLangShiki = computed<string>(() => {
       </span>
 
       <!-- ZOD OPTIONS -->
-      <template v-if="selectedTarget === 'zod'">
+      <template v-if="draft.selectedTarget === 'zod'">
         <label class="flex items-center gap-2 cursor-pointer hover:text-highlighted">
           <input
-            v-model="zodInferType"
+            v-model="draft.zodInferType"
             type="checkbox"
             class="rounded border-default text-primary focus:ring-primary"
           >
@@ -398,10 +424,10 @@ const targetLangShiki = computed<string>(() => {
       </template>
 
       <!-- PYDANTIC OPTIONS -->
-      <template v-else-if="selectedTarget === 'pydantic'">
+      <template v-else-if="draft.selectedTarget === 'pydantic'">
         <label class="flex items-center gap-2 cursor-pointer hover:text-highlighted">
           <input
-            v-model="pythonSnakeCase"
+            v-model="draft.pythonSnakeCase"
             type="checkbox"
             class="rounded border-default text-primary focus:ring-primary"
           >
@@ -409,7 +435,7 @@ const targetLangShiki = computed<string>(() => {
         </label>
         <label class="flex items-center gap-2 cursor-pointer hover:text-highlighted">
           <input
-            v-model="pythonOptionalUnion"
+            v-model="draft.pythonOptionalUnion"
             type="checkbox"
             class="rounded border-default text-primary focus:ring-primary"
           >
@@ -418,10 +444,10 @@ const targetLangShiki = computed<string>(() => {
       </template>
 
       <!-- PYTHON DATACLASS OPTIONS -->
-      <template v-else-if="selectedTarget === 'dataclass'">
+      <template v-else-if="draft.selectedTarget === 'dataclass'">
         <label class="flex items-center gap-2 cursor-pointer hover:text-highlighted">
           <input
-            v-model="pythonSnakeCase"
+            v-model="draft.pythonSnakeCase"
             type="checkbox"
             class="rounded border-default text-primary focus:ring-primary"
           >
@@ -429,7 +455,7 @@ const targetLangShiki = computed<string>(() => {
         </label>
         <label class="flex items-center gap-2 cursor-pointer hover:text-highlighted">
           <input
-            v-model="pythonOptionalUnion"
+            v-model="draft.pythonOptionalUnion"
             type="checkbox"
             class="rounded border-default text-primary focus:ring-primary"
           >
@@ -438,15 +464,15 @@ const targetLangShiki = computed<string>(() => {
       </template>
 
       <!-- PYTHON TYPEDDICT OPTIONS -->
-      <template v-else-if="selectedTarget === 'typeddict'">
+      <template v-else-if="draft.selectedTarget === 'typeddict'">
         <span class="text-muted">Generates PEP 589 TypedDict with <code>NotRequired[...]</code> for optional fields</span>
       </template>
 
       <!-- GO OPTIONS -->
-      <template v-else-if="selectedTarget === 'go'">
+      <template v-else-if="draft.selectedTarget === 'go'">
         <label class="flex items-center gap-2 cursor-pointer hover:text-highlighted">
           <input
-            v-model="goOmitEmpty"
+            v-model="draft.goOmitEmpty"
             type="checkbox"
             class="rounded border-default text-primary focus:ring-primary"
           >
@@ -454,7 +480,7 @@ const targetLangShiki = computed<string>(() => {
         </label>
         <label class="flex items-center gap-2 cursor-pointer hover:text-highlighted">
           <input
-            v-model="goPointerOptional"
+            v-model="draft.goPointerOptional"
             type="checkbox"
             class="rounded border-default text-primary focus:ring-primary"
           >
@@ -463,11 +489,11 @@ const targetLangShiki = computed<string>(() => {
       </template>
 
       <!-- TYPESCRIPT OPTIONS -->
-      <template v-else-if="selectedTarget === 'typescript'">
+      <template v-else-if="draft.selectedTarget === 'typescript'">
         <div class="flex items-center gap-2">
           <span>Style:</span>
           <select
-            v-model="tsTypeOrInterface"
+            v-model="draft.tsTypeOrInterface"
             class="bg-transparent border border-default rounded px-2 py-0.5 text-xs text-highlighted"
           >
             <option value="interface">
@@ -480,7 +506,7 @@ const targetLangShiki = computed<string>(() => {
         </div>
         <label class="flex items-center gap-2 cursor-pointer hover:text-highlighted">
           <input
-            v-model="tsReadonly"
+            v-model="draft.tsReadonly"
             type="checkbox"
             class="rounded border-default text-primary focus:ring-primary"
           >
@@ -502,24 +528,24 @@ const targetLangShiki = computed<string>(() => {
               <button
                 type="button"
                 class="px-2 py-0.5 rounded transition-all"
-                :class="inputMode === 'auto' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted'"
-                @click="inputMode = 'auto'"
+                :class="draft.inputMode === 'auto' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted'"
+                @click="draft.inputMode = 'auto'"
               >
                 Auto Detect
               </button>
               <button
                 type="button"
                 class="px-2 py-0.5 rounded transition-all"
-                :class="inputMode === 'json' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted'"
-                @click="inputMode = 'json'"
+                :class="draft.inputMode === 'json' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted'"
+                @click="draft.inputMode = 'json'"
               >
                 Raw JSON
               </button>
               <button
                 type="button"
                 class="px-2 py-0.5 rounded transition-all"
-                :class="inputMode === 'schema' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted'"
-                @click="inputMode = 'schema'"
+                :class="draft.inputMode === 'schema' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted'"
+                @click="draft.inputMode = 'schema'"
               >
                 JSON Schema
               </button>
@@ -534,7 +560,7 @@ const targetLangShiki = computed<string>(() => {
               Invalid
             </UBadge>
             <UBadge
-              v-else-if="rawInput.trim()"
+              v-else-if="draft.rawInput.trim()"
               color="success"
               variant="subtle"
               size="xs"
@@ -550,7 +576,7 @@ const targetLangShiki = computed<string>(() => {
               color="neutral"
               variant="ghost"
               size="xs"
-              :disabled="!rawInput.trim()"
+              :disabled="!draft.rawInput.trim()"
               @click="formatJsonInput"
             />
             <UButton
@@ -559,15 +585,15 @@ const targetLangShiki = computed<string>(() => {
               color="neutral"
               variant="ghost"
               size="xs"
-              :disabled="!rawInput"
-              @click="rawInput = ''"
+              :disabled="!draft.rawInput"
+              @click="clearAll"
             />
           </div>
         </div>
 
         <div class="relative">
           <textarea
-            v-model="rawInput"
+            v-model="draft.rawInput"
             placeholder="Paste your JSON payload or JSON Schema definition here..."
             rows="24"
             class="w-full font-mono text-xs p-4 rounded-xl border border-default bg-neutral-100/30 dark:bg-neutral-900/40 text-highlighted focus:ring-2 focus:ring-primary focus:outline-none transition resize-y"
@@ -592,13 +618,13 @@ const targetLangShiki = computed<string>(() => {
       <div class="flex flex-col gap-2">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <span class="text-xs font-semibold text-highlighted uppercase tracking-wider">Generated {{ selectedTarget.toUpperCase() }}</span>
+            <span class="text-xs font-semibold text-highlighted uppercase tracking-wider">Generated {{ draft.selectedTarget.toUpperCase() }}</span>
             <UBadge
               color="neutral"
               variant="subtle"
               size="xs"
             >
-              {{ TARGETS.find(t => t.id === selectedTarget)?.label }}
+              {{ TARGETS.find(t => t.id === draft.selectedTarget)?.label }}
             </UBadge>
           </div>
 

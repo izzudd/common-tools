@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useClipboardAction } from '~/composables/useClipboardAction'
+import { useToolDraft } from '~/composables/useToolDraft'
 import type { SchemaField, SchemaDraft } from '~/types/schema'
 import {
   generateFieldId,
@@ -9,84 +10,95 @@ import {
 
 type ActiveView = 'builder' | 'infer'
 
-// Page-isolated state
-const activeView = ref<ActiveView>('builder')
+interface SchemaDraftState {
+  activeView: ActiveView
+  schemaTitle: string
+  schemaDescription: string
+  schemaDraft: SchemaDraft
+  strictAdditionalProperties: boolean
+  sampleJsonInput: string
+  rootField: SchemaField
+}
 
-// Schema Config
-const schemaTitle = ref('UserPayload')
-const schemaDescription = ref('')
-const schemaDraft = ref<SchemaDraft>('draft-07')
-const strictAdditionalProperties = ref(false)
+function getDefaultRootField(): SchemaField {
+  return {
+    id: 'root',
+    name: 'root',
+    type: 'object',
+    required: true,
+    properties: [
+      {
+        id: generateFieldId(),
+        name: 'id',
+        type: 'integer',
+        required: true,
+        minimum: 1
+      },
+      {
+        id: generateFieldId(),
+        name: 'username',
+        type: 'string',
+        required: true,
+        minLength: 3,
+        maxLength: 30
+      },
+      {
+        id: generateFieldId(),
+        name: 'email',
+        type: 'string',
+        required: true,
+        format: 'email'
+      },
+      {
+        id: generateFieldId(),
+        name: 'isActive',
+        type: 'boolean',
+        required: false
+      },
+      {
+        id: generateFieldId(),
+        name: 'roles',
+        type: 'array',
+        required: true,
+        itemType: 'string'
+      },
+      {
+        id: generateFieldId(),
+        name: 'profile',
+        type: 'object',
+        required: false,
+        properties: [
+          {
+            id: generateFieldId(),
+            name: 'displayName',
+            type: 'string',
+            required: false
+          },
+          {
+            id: generateFieldId(),
+            name: 'website',
+            type: 'string',
+            required: false,
+            format: 'uri'
+          }
+        ]
+      }
+    ]
+  }
+}
 
-// Sample input for inference mode
-const sampleJsonInput = ref('')
+// Persistent tool draft in localStorage
+const { state: draft, clearDraft } = useToolDraft<SchemaDraftState>('json-schema', () => ({
+  activeView: 'builder',
+  schemaTitle: 'UserPayload',
+  schemaDescription: '',
+  schemaDraft: 'draft-07',
+  strictAdditionalProperties: false,
+  sampleJsonInput: '',
+  rootField: getDefaultRootField()
+}))
+
 const inferErrorMessage = ref<string | null>(null)
-
-// Root Schema Tree
-const rootField = ref<SchemaField>({
-  id: 'root',
-  name: 'root',
-  type: 'object',
-  required: true,
-  properties: [
-    {
-      id: generateFieldId(),
-      name: 'id',
-      type: 'integer',
-      required: true,
-      minimum: 1
-    },
-    {
-      id: generateFieldId(),
-      name: 'username',
-      type: 'string',
-      required: true,
-      minLength: 3,
-      maxLength: 30
-    },
-    {
-      id: generateFieldId(),
-      name: 'email',
-      type: 'string',
-      required: true,
-      format: 'email'
-    },
-    {
-      id: generateFieldId(),
-      name: 'isActive',
-      type: 'boolean',
-      required: false
-    },
-    {
-      id: generateFieldId(),
-      name: 'roles',
-      type: 'array',
-      required: true,
-      itemType: 'string'
-    },
-    {
-      id: generateFieldId(),
-      name: 'profile',
-      type: 'object',
-      required: false,
-      properties: [
-        {
-          id: generateFieldId(),
-          name: 'displayName',
-          type: 'string',
-          required: false
-        },
-        {
-          id: generateFieldId(),
-          name: 'website',
-          type: 'string',
-          required: false,
-          format: 'uri'
-        }
-      ]
-    }
-  ]
-})
 
 const { copied, copyToClipboard } = useClipboardAction()
 const toast = useToast()
@@ -107,19 +119,24 @@ const sampleJsonPayload = `{
 }`
 
 function loadSample() {
-  sampleJsonInput.value = sampleJsonPayload
+  draft.value.sampleJsonInput = sampleJsonPayload
   inferFromJson()
 }
 
 function clearAll() {
-  rootField.value.properties = []
-  sampleJsonInput.value = ''
+  clearDraft()
   inferErrorMessage.value = null
+  toast.add({
+    title: 'Cleared',
+    description: 'Schema reset to default and local draft wiped clean',
+    color: 'neutral',
+    icon: 'i-lucide-trash-2'
+  })
 }
 
 function inferFromJson() {
   inferErrorMessage.value = null
-  const raw = sampleJsonInput.value.trim()
+  const raw = draft.value.sampleJsonInput.trim()
   if (!raw) {
     inferErrorMessage.value = 'Please paste a valid JSON string'
     return
@@ -130,10 +147,10 @@ function inferFromJson() {
     const inferred = inferSchemaFromData('root', parsed, true)
 
     if (inferred.type === 'object') {
-      rootField.value = inferred
+      draft.value.rootField = inferred
     } else {
       // Wrap in root container
-      rootField.value = {
+      draft.value.rootField = {
         id: 'root',
         name: 'root',
         type: 'object',
@@ -142,7 +159,7 @@ function inferFromJson() {
       }
     }
 
-    activeView.value = 'builder'
+    draft.value.activeView = 'builder'
     toast.add({
       title: 'Schema Inferred',
       description: 'Extracted properties & data types successfully',
@@ -156,11 +173,11 @@ function inferFromJson() {
 
 // Generated Output Code
 const generatedSchema = computed(() => {
-  return buildRootJsonSchema(rootField.value, {
-    draft: schemaDraft.value,
-    title: schemaTitle.value,
-    description: schemaDescription.value,
-    strictAdditionalProperties: strictAdditionalProperties.value
+  return buildRootJsonSchema(draft.value.rootField, {
+    draft: draft.value.schemaDraft,
+    title: draft.value.schemaTitle,
+    description: draft.value.schemaDescription,
+    strictAdditionalProperties: draft.value.strictAdditionalProperties
   })
 })
 
@@ -177,8 +194,8 @@ function markAllRequired(required: boolean) {
     }
   }
 
-  if (rootField.value.properties) {
-    rootField.value.properties.forEach(applyReq)
+  if (draft.value.rootField.properties) {
+    draft.value.rootField.properties.forEach(applyReq)
   }
 
   toast.add({
@@ -188,7 +205,7 @@ function markAllRequired(required: boolean) {
 }
 
 function downloadFile() {
-  const filename = `${schemaTitle.value.toLowerCase() || 'schema'}.json`
+  const filename = `${draft.value.schemaTitle.toLowerCase() || 'schema'}.json`
   const blob = new Blob([currentOutputCode.value], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -223,7 +240,7 @@ const stats = computed(() => {
   }
 
   return {
-    totalProperties: countProps(rootField.value),
+    totalProperties: countProps(draft.value.rootField),
     outputLines: currentOutputCode.value.split('\n').length,
     outputSize: new Blob([currentOutputCode.value]).size
   }
@@ -234,7 +251,7 @@ const stats = computed(() => {
   <div class="space-y-6">
     <ToolHeader
       title="JSON Schema Builder & Generator"
-      description="Create, infer, and customize JSON Schema (Draft 7 / 2020-12) and TypeScript interfaces interactively."
+      description="Create, infer, and customize JSON Schema (Draft 7 / 2020-12) interactively."
       icon="i-lucide-file-json"
       category="JSON Tools"
       badge="Generator"
@@ -250,8 +267,8 @@ const stats = computed(() => {
             <button
               type="button"
               class="px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5"
-              :class="activeView === 'builder' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted hover:text-highlighted'"
-              @click="activeView = 'builder'"
+              :class="draft.activeView === 'builder' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted hover:text-highlighted'"
+              @click="draft.activeView = 'builder'"
             >
               <UIcon
                 name="i-lucide-sliders"
@@ -262,8 +279,8 @@ const stats = computed(() => {
             <button
               type="button"
               class="px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5"
-              :class="activeView === 'infer' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted hover:text-highlighted'"
-              @click="activeView = 'infer'"
+              :class="draft.activeView === 'infer' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted hover:text-highlighted'"
+              @click="draft.activeView = 'infer'"
             >
               <UIcon
                 name="i-lucide-sparkles"
@@ -298,7 +315,7 @@ const stats = computed(() => {
           <div class="flex items-center gap-1.5">
             <span class="text-muted">Title:</span>
             <input
-              v-model="schemaTitle"
+              v-model="draft.schemaTitle"
               type="text"
               placeholder="SchemaTitle"
               class="w-32 px-2 py-0.5 text-xs font-mono rounded border border-default bg-neutral-100 dark:bg-neutral-900 text-highlighted focus:outline-none focus:ring-1 focus:ring-primary"
@@ -309,7 +326,7 @@ const stats = computed(() => {
           <div class="flex items-center gap-1.5">
             <span class="text-muted">Draft:</span>
             <select
-              v-model="schemaDraft"
+              v-model="draft.schemaDraft"
               class="px-2 py-0.5 text-xs rounded border border-default bg-neutral-100 dark:bg-neutral-900 font-mono text-highlighted focus:outline-none"
             >
               <option value="draft-07">
@@ -327,7 +344,7 @@ const stats = computed(() => {
           <!-- Strict Additional Properties -->
           <label class="flex items-center gap-1.5 text-muted hover:text-highlighted cursor-pointer select-none">
             <input
-              v-model="strictAdditionalProperties"
+              v-model="draft.strictAdditionalProperties"
               type="checkbox"
               class="rounded border-default text-primary focus:ring-primary/20"
             >
@@ -348,14 +365,13 @@ const stats = computed(() => {
       <div>
         <span class="text-muted block text-[11px]">Generated Size</span>
         <div class="font-mono mt-0.5">
-          <strong class="text-highlighted">{{ stats.outputLines }}</strong> lines
-          <span class="text-muted text-[11px]">({{ stats.outputSize }} B)</span>
+          <strong class="text-highlighted">{{ stats.outputSize }}</strong> bytes
         </div>
       </div>
       <div>
         <span class="text-muted block text-[11px]">Schema Draft</span>
         <div class="font-mono mt-0.5 font-semibold text-primary uppercase">
-          {{ schemaDraft }}
+          {{ draft.schemaDraft }}
         </div>
       </div>
       <div>
@@ -372,7 +388,7 @@ const stats = computed(() => {
       <div class="lg:col-span-7 space-y-4">
         <!-- MODE A: Visual Builder Tree -->
         <div
-          v-if="activeView === 'builder'"
+          v-if="draft.activeView === 'builder'"
           class="rounded-xl border border-default bg-neutral-100/30 dark:bg-neutral-900/40 p-4 space-y-3"
         >
           <div class="flex items-center justify-between pb-2 border-b border-default text-xs">
@@ -383,13 +399,13 @@ const stats = computed(() => {
               />
               Root Object Properties
             </div>
-            <span class="text-muted text-[11px] font-mono">{{ rootField.properties?.length || 0 }} top-level keys</span>
+            <span class="text-muted text-[11px] font-mono">{{ draft.rootField.properties?.length || 0 }} top-level keys</span>
           </div>
 
           <!-- Root Node Component -->
           <div class="space-y-2">
             <SchemaFieldNode
-              v-model="rootField"
+              v-model="draft.rootField"
               :is-root="true"
             />
           </div>
@@ -423,7 +439,7 @@ const stats = computed(() => {
           </div>
 
           <textarea
-            v-model="sampleJsonInput"
+            v-model="draft.sampleJsonInput"
             rows="14"
             placeholder="Paste your JSON payload here..."
             class="w-full p-3 font-mono text-xs rounded-xl border border-default bg-neutral-100/60 dark:bg-neutral-950/60 text-highlighted focus:outline-none focus:ring-2 focus:ring-primary/40 resize-y"
@@ -454,7 +470,7 @@ const stats = computed(() => {
               variant="subtle"
               size="xs"
             >
-              {{ schemaDraft }}
+              {{ draft.schemaDraft }}
             </UBadge>
           </div>
 
