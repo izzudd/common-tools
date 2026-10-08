@@ -66,6 +66,15 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
         icon: 'i-lucide-link',
         badge: 'SEO',
         keywords: ['string', 'slug', 'slugify', 'url', 'seo', 'permalink', 'kebab-case', 'normalize', 'clean-url']
+      },
+      {
+        id: 'string-base-encoder',
+        name: 'Base Encoder & Decoder',
+        description: 'Encode/decode text or convert numbers across Base64, Hex, Binary, Base32, Base58, Base62, Octal',
+        path: '/string/base-encoder',
+        icon: 'i-lucide-binary',
+        badge: 'Multi-Base',
+        keywords: ['string', 'base', 'base64', 'base32', 'base58', 'base62', 'binary', 'hex', 'octal', 'encode', 'decode', 'radix', 'convert']
       }
     ]
   }

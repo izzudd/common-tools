@@ -57,6 +57,10 @@ Most online formatters and conversion utilities log your requests or route your 
   - Accents and diacritics transliteration (`NFKD` normalization, special character mapping).
   - Common English stop words removal and max length truncation with word boundaries.
   - Multi-line batch processing mode and instant copy cards for kebab, snake, camel, pascal, constant, and dot cases.
+- **Base Encoder & Decoder (`/string/base-encoder`)**:
+  - **Text Encoding & Decoding**: Convert strings to/from Base64 (standard and URL-safe), Hex (Base16), Binary (Base2), Base32, Base58 (Bitcoin), Base62, Octal (Base8), and ASCII Decimal bytes.
+  - **Live Multi-Base Overview**: Instantaneous preview cards of all base representations with one-click copy.
+  - **Number / Radix Conversion**: Convert integers (including arbitrary-precision BigInts) across Base 2, 8, 10, 16, 32, 36, 58, 62, and 64 simultaneously.
 
 ### 3. Ergonomic Developer Experience
 - **Sample Data Pre-loaders**: Quickly test each tool with built-in realistic payloads.
