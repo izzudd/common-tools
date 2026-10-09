@@ -6,7 +6,9 @@ useHead({
     { name: 'description', content: 'Lean, secure, 100% client-side developer utility web app with zero backend persistence.' }
   ],
   link: [
-    { rel: 'icon', href: '/favicon.ico' }
+    { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+    { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+    { rel: 'apple-touch-icon', href: '/favicon.svg' }
   ],
   htmlAttrs: {
     lang: 'en'
