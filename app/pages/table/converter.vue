@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useClipboardAction } from '~/composables/useClipboardAction'
+import { useToolDraft } from '~/composables/useToolDraft'
 import {
   parseCsv,
   tableToSql,
@@ -14,28 +15,39 @@ import {
 
 type ExportFormat = 'sql' | 'jsonl' | 'json' | 'tsv' | 'markdown' | 'html' | 'yaml'
 
-// Page-isolated state
-const input = ref('')
+interface TableConverterDraft {
+  input: string
+  selectedFormat: ExportFormat
+  delimiterChoice: 'auto' | ',' | '\t' | ';' | '|'
+  sqlDialect: SqlDialect
+  sqlTableName: string
+  sqlCreateTable: boolean
+  sqlDropTable: boolean
+  sqlIfNotExists: boolean
+  sqlMultiRow: boolean
+  sqlEmptyAsNull: boolean
+  sqlBatchSize: number
+  parseDataTypes: boolean
+  jsonIndent: number
+}
+
+const { state: draft, clearDraft } = useToolDraft<TableConverterDraft>('table-converter', () => ({
+  input: '',
+  selectedFormat: 'sql',
+  delimiterChoice: 'auto',
+  sqlDialect: 'mysql',
+  sqlTableName: 'users',
+  sqlCreateTable: true,
+  sqlDropTable: true,
+  sqlIfNotExists: true,
+  sqlMultiRow: true,
+  sqlEmptyAsNull: true,
+  sqlBatchSize: 250,
+  parseDataTypes: true,
+  jsonIndent: 2
+}))
+
 const output = ref('')
-const selectedFormat = ref<ExportFormat>('sql')
-
-// Delimiter & Parse Options
-const delimiterChoice = ref<'auto' | ',' | '\t' | ';' | '|'>('auto')
-
-// SQL Specific Options
-const sqlDialect = ref<SqlDialect>('mysql')
-const sqlTableName = ref('users')
-const sqlCreateTable = ref(true)
-const sqlDropTable = ref(true)
-const sqlIfNotExists = ref(true)
-const sqlMultiRow = ref(true)
-const sqlEmptyAsNull = ref(true)
-const sqlBatchSize = ref(250)
-
-// JSON / Other Options
-const parseDataTypes = ref(true)
-const jsonIndent = ref<number>(2)
-
 const { copied, copyToClipboard } = useClipboardAction()
 const toast = useToast()
 
@@ -47,23 +59,23 @@ const sampleCsv = `id,name,email,role,salary,is_active,joined_date
 5,Emma Watson,emma@example.com,UX Designer,88000.00,true,2024-04-05`
 
 function loadSample() {
-  input.value = sampleCsv
+  draft.value.input = sampleCsv
   convertData()
 }
 
 function clearAll() {
-  input.value = ''
+  clearDraft()
   output.value = ''
 }
 
 function convertData() {
-  const raw = input.value.trim()
+  const raw = draft.value.input.trim()
   if (!raw) {
     output.value = ''
     return
   }
 
-  const forcedDelimiter = delimiterChoice.value === 'auto' ? undefined : delimiterChoice.value
+  const forcedDelimiter = draft.value.delimiterChoice === 'auto' ? undefined : draft.value.delimiterChoice
   const { headers, rows } = parseCsv(raw, forcedDelimiter)
 
   if (headers.length === 0) {
@@ -71,28 +83,28 @@ function convertData() {
     return
   }
 
-  switch (selectedFormat.value) {
+  switch (draft.value.selectedFormat) {
     case 'sql':
       output.value = tableToSql({
         headers,
         rows,
-        dialect: sqlDialect.value,
-        tableName: sqlTableName.value.trim() || 'imported_data',
-        createTable: sqlCreateTable.value,
-        dropTable: sqlDropTable.value,
-        ifNotExists: sqlIfNotExists.value,
-        multiRowInsert: sqlMultiRow.value,
-        emptyAsNull: sqlEmptyAsNull.value,
-        batchSize: sqlBatchSize.value
+        dialect: draft.value.sqlDialect,
+        tableName: draft.value.sqlTableName.trim() || 'imported_data',
+        createTable: draft.value.sqlCreateTable,
+        dropTable: draft.value.sqlDropTable,
+        ifNotExists: draft.value.sqlIfNotExists,
+        multiRowInsert: draft.value.sqlMultiRow,
+        emptyAsNull: draft.value.sqlEmptyAsNull,
+        batchSize: draft.value.sqlBatchSize
       })
       break
 
     case 'jsonl':
-      output.value = tableToJsonl(headers, rows, parseDataTypes.value)
+      output.value = tableToJsonl(headers, rows, draft.value.parseDataTypes)
       break
 
     case 'json':
-      output.value = tableToJson(headers, rows, parseDataTypes.value, jsonIndent.value)
+      output.value = tableToJson(headers, rows, draft.value.parseDataTypes, draft.value.jsonIndent)
       break
 
     case 'tsv':
@@ -108,30 +120,17 @@ function convertData() {
       break
 
     case 'yaml':
-      output.value = tableToYaml(headers, rows, parseDataTypes.value)
+      output.value = tableToYaml(headers, rows, draft.value.parseDataTypes)
       break
   }
 }
 
 watch(
-  [
-    input,
-    selectedFormat,
-    delimiterChoice,
-    sqlDialect,
-    sqlTableName,
-    sqlCreateTable,
-    sqlDropTable,
-    sqlIfNotExists,
-    sqlMultiRow,
-    sqlEmptyAsNull,
-    sqlBatchSize,
-    parseDataTypes,
-    jsonIndent
-  ],
+  draft,
   () => {
     convertData()
-  }
+  },
+  { deep: true, immediate: true }
 )
 
 function handleFileUpload(e: Event) {
@@ -142,10 +141,10 @@ function handleFileUpload(e: Event) {
   reader.onload = (event) => {
     const content = event.target?.result as string
     if (content) {
-      input.value = content
+      draft.value.input = content
       // Infer table name from filename
       const baseName = file.name.replace(/\.[^/.]+$/, '').replace(/[^\w\d_]/g, '_')
-      if (baseName) sqlTableName.value = baseName
+      if (baseName) draft.value.sqlTableName = baseName
       convertData()
     }
   }
@@ -156,7 +155,7 @@ async function pasteFromClipboard() {
   try {
     const text = await navigator.clipboard.readText()
     if (text) {
-      input.value = text
+      draft.value.input = text
       convertData()
       toast.add({
         title: 'Pasted from Clipboard',
@@ -178,7 +177,7 @@ function downloadOutput() {
   let ext = 'txt'
   let mime = 'text/plain'
 
-  switch (selectedFormat.value) {
+  switch (draft.value.selectedFormat) {
     case 'sql':
       ext = 'sql'
       mime = 'application/sql'
@@ -209,7 +208,7 @@ function downloadOutput() {
       break
   }
 
-  const filename = `${sqlTableName.value || 'table'}.${ext}`
+  const filename = `${draft.value.sqlTableName || 'table'}.${ext}`
   const blob = new Blob([output.value], { type: mime })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -226,7 +225,7 @@ function downloadOutput() {
 }
 
 const stats = computed(() => {
-  const inText = input.value
+  const inText = draft.value.input
   const outText = output.value
   const inLines = inText ? inText.trim().split(/\r?\n/).length : 0
   const outLines = outText ? outText.split('\n').length : 0
@@ -277,8 +276,8 @@ const stats = computed(() => {
                 :key="fmt.id"
                 type="button"
                 class="px-2.5 py-1 text-xs font-medium rounded-md transition-all"
-                :class="selectedFormat === fmt.id ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted hover:text-highlighted'"
-                @click="selectedFormat = fmt.id"
+                :class="draft.selectedFormat === fmt.id ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted hover:text-highlighted'"
+                @click="draft.selectedFormat = fmt.id"
               >
                 {{ fmt.label }}
               </button>
@@ -311,7 +310,7 @@ const stats = computed(() => {
         <!-- Format-specific Options Row -->
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs pt-2 border-t border-default/50 w-full">
           <!-- SQL Config Controls -->
-          <template v-if="selectedFormat === 'sql'">
+          <template v-if="draft.selectedFormat === 'sql'">
             <!-- Dialect Selector -->
             <div class="flex items-center gap-2">
               <span class="text-muted">Dialect:</span>
@@ -321,8 +320,8 @@ const stats = computed(() => {
                   :key="d"
                   type="button"
                   class="px-2 py-0.5 rounded capitalize"
-                  :class="sqlDialect === d ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted hover:text-highlighted'"
-                  @click="sqlDialect = d"
+                  :class="draft.sqlDialect === d ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted hover:text-highlighted'"
+                  @click="draft.sqlDialect = d"
                 >
                   {{ d === 'postgres' ? 'PostgreSQL' : d === 'mssql' ? 'SQL Server' : d }}
                 </button>
@@ -333,7 +332,7 @@ const stats = computed(() => {
             <div class="flex items-center gap-1.5">
               <span class="text-muted">Table Name:</span>
               <input
-                v-model="sqlTableName"
+                v-model="draft.sqlTableName"
                 type="text"
                 class="w-28 px-2 py-0.5 text-xs font-mono rounded border border-default bg-neutral-100 dark:bg-neutral-900 text-highlighted focus:outline-none focus:ring-1 focus:ring-primary"
               >
@@ -342,7 +341,7 @@ const stats = computed(() => {
             <!-- Create Table Toggle -->
             <label class="flex items-center gap-1.5 text-muted hover:text-highlighted cursor-pointer select-none">
               <input
-                v-model="sqlCreateTable"
+                v-model="draft.sqlCreateTable"
                 type="checkbox"
                 class="rounded border-default text-primary focus:ring-primary/20"
               >
@@ -351,11 +350,11 @@ const stats = computed(() => {
 
             <!-- Drop Table Toggle -->
             <label
-              v-if="sqlCreateTable"
+              v-if="draft.sqlCreateTable"
               class="flex items-center gap-1.5 text-muted hover:text-highlighted cursor-pointer select-none"
             >
               <input
-                v-model="sqlDropTable"
+                v-model="draft.sqlDropTable"
                 type="checkbox"
                 class="rounded border-default text-primary focus:ring-primary/20"
               >
@@ -364,11 +363,11 @@ const stats = computed(() => {
 
             <!-- Multi-row insert -->
             <label
-              v-if="sqlDialect !== 'sqlite'"
+              v-if="draft.sqlDialect !== 'sqlite'"
               class="flex items-center gap-1.5 text-muted hover:text-highlighted cursor-pointer select-none"
             >
               <input
-                v-model="sqlMultiRow"
+                v-model="draft.sqlMultiRow"
                 type="checkbox"
                 class="rounded border-default text-primary focus:ring-primary/20"
               >
@@ -378,7 +377,7 @@ const stats = computed(() => {
             <!-- Empty strings as NULL -->
             <label class="flex items-center gap-1.5 text-muted hover:text-highlighted cursor-pointer select-none">
               <input
-                v-model="sqlEmptyAsNull"
+                v-model="draft.sqlEmptyAsNull"
                 type="checkbox"
                 class="rounded border-default text-primary focus:ring-primary/20"
               >
@@ -387,10 +386,10 @@ const stats = computed(() => {
           </template>
 
           <!-- JSON & JSONL Controls -->
-          <template v-else-if="selectedFormat === 'jsonl' || selectedFormat === 'json' || selectedFormat === 'yaml'">
+          <template v-else-if="draft.selectedFormat === 'jsonl' || draft.selectedFormat === 'json' || draft.selectedFormat === 'yaml'">
             <label class="flex items-center gap-2 text-muted hover:text-highlighted cursor-pointer select-none">
               <input
-                v-model="parseDataTypes"
+                v-model="draft.parseDataTypes"
                 type="checkbox"
                 class="rounded border-default text-primary focus:ring-primary/20"
               >
@@ -398,7 +397,7 @@ const stats = computed(() => {
             </label>
 
             <div
-              v-if="selectedFormat === 'json'"
+              v-if="draft.selectedFormat === 'json'"
               class="flex items-center gap-2"
             >
               <span class="text-muted">Indent:</span>
@@ -406,16 +405,16 @@ const stats = computed(() => {
                 <button
                   type="button"
                   class="px-2 py-0.5 rounded"
-                  :class="jsonIndent === 2 ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
-                  @click="jsonIndent = 2"
+                  :class="draft.jsonIndent === 2 ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
+                  @click="draft.jsonIndent = 2"
                 >
                   2 spaces
                 </button>
                 <button
                   type="button"
                   class="px-2 py-0.5 rounded"
-                  :class="jsonIndent === 4 ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
-                  @click="jsonIndent = 4"
+                  :class="draft.jsonIndent === 4 ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
+                  @click="draft.jsonIndent = 4"
                 >
                   4 spaces
                 </button>
@@ -427,7 +426,7 @@ const stats = computed(() => {
           <div class="flex items-center gap-2 ml-auto">
             <span class="text-muted">Input Delimiter:</span>
             <select
-              v-model="delimiterChoice"
+              v-model="draft.delimiterChoice"
               class="px-2 py-0.5 text-xs rounded border border-default bg-neutral-100 dark:bg-neutral-900 font-mono text-highlighted focus:outline-none"
             >
               <option value="auto">
@@ -470,7 +469,7 @@ const stats = computed(() => {
       <div>
         <span class="text-muted block text-[11px]">Target Format</span>
         <div class="font-mono mt-0.5 uppercase font-semibold text-primary">
-          {{ selectedFormat === 'sql' ? `SQL (${sqlDialect})` : selectedFormat }}
+          {{ draft.selectedFormat === 'sql' ? `SQL (${draft.sqlDialect})` : draft.selectedFormat }}
         </div>
       </div>
       <div>
@@ -521,7 +520,7 @@ const stats = computed(() => {
         </div>
         <div class="p-2 flex-1">
           <textarea
-            v-model="input"
+            v-model="draft.input"
             placeholder="Paste CSV, TSV, or comma-separated rows here..."
             class="w-full h-96 p-3 bg-transparent font-mono text-xs focus:outline-none resize-y text-highlighted"
             spellcheck="false"
@@ -537,7 +536,7 @@ const stats = computed(() => {
               name="i-lucide-code"
               class="size-4"
             />
-            Converted {{ selectedFormat.toUpperCase() }}
+            Converted {{ draft.selectedFormat.toUpperCase() }}
           </span>
           <div class="flex items-center gap-2">
             <span class="font-mono text-[11px]">{{ stats.outChars }} chars</span>

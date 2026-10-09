@@ -1,16 +1,26 @@
 <script setup lang="ts">
 import { useClipboardAction } from '~/composables/useClipboardAction'
+import { useToolDraft } from '~/composables/useToolDraft'
 
 type Mode = 'html' | 'url' | 'regex' | 'slash' | 'base64'
 type Action = 'escape' | 'unescape'
 
-// Page-isolated state
-const input = ref('')
+interface EscaperDraft {
+  input: string
+  selectedMode: Mode
+  selectedAction: Action
+  urlComponentOnly: boolean
+}
+
+const { state: draft, clearDraft } = useToolDraft<EscaperDraft>('string-escaper', () => ({
+  input: '',
+  selectedMode: 'html',
+  selectedAction: 'escape',
+  urlComponentOnly: true
+}))
+
 const output = ref('')
-const selectedMode = ref<Mode>('html')
-const selectedAction = ref<Action>('escape')
 const errorMessage = ref<string | null>(null)
-const urlComponentOnly = ref(true)
 
 const { copied, copyToClipboard } = useClipboardAction()
 
@@ -38,21 +48,21 @@ const SAMPLES: Record<Mode, { escape: string, unescape: string }> = {
 }
 
 function loadSample() {
-  const sample = SAMPLES[selectedMode.value]
-  input.value = selectedAction.value === 'escape' ? sample.escape : sample.unescape
+  const sample = SAMPLES[draft.value.selectedMode]
+  draft.value.input = draft.value.selectedAction === 'escape' ? sample.escape : sample.unescape
   processText()
 }
 
 function clearAll() {
-  input.value = ''
+  clearDraft()
   output.value = ''
   errorMessage.value = null
 }
 
 function swapInputOutput() {
   const temp = output.value
-  selectedAction.value = selectedAction.value === 'escape' ? 'unescape' : 'escape'
-  input.value = temp
+  draft.value.selectedAction = draft.value.selectedAction === 'escape' ? 'unescape' : 'escape'
+  draft.value.input = temp
   processText()
 }
 
@@ -73,16 +83,16 @@ function base64ToUtf8(str: string): string {
 
 function processText() {
   errorMessage.value = null
-  const text = input.value
+  const text = draft.value.input
   if (!text) {
     output.value = ''
     return
   }
 
   try {
-    switch (selectedMode.value) {
+    switch (draft.value.selectedMode) {
       case 'html':
-        if (selectedAction.value === 'escape') {
+        if (draft.value.selectedAction === 'escape') {
           output.value = text
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
@@ -102,15 +112,15 @@ function processText() {
         break
 
       case 'url':
-        if (selectedAction.value === 'escape') {
-          output.value = urlComponentOnly.value ? encodeURIComponent(text) : encodeURI(text)
+        if (draft.value.selectedAction === 'escape') {
+          output.value = draft.value.urlComponentOnly ? encodeURIComponent(text) : encodeURI(text)
         } else {
-          output.value = urlComponentOnly.value ? decodeURIComponent(text) : decodeURI(text)
+          output.value = draft.value.urlComponentOnly ? decodeURIComponent(text) : decodeURI(text)
         }
         break
 
       case 'regex':
-        if (selectedAction.value === 'escape') {
+        if (draft.value.selectedAction === 'escape') {
           // Escapes characters with special meaning in regex: [ \ ^ $ . | ? * + ( ) { }
           output.value = text.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')
         } else {
@@ -119,7 +129,7 @@ function processText() {
         break
 
       case 'slash':
-        if (selectedAction.value === 'escape') {
+        if (draft.value.selectedAction === 'escape') {
           output.value = text
             .replace(/\\/g, '\\\\')
             .replace(/"/g, '\\"')
@@ -141,7 +151,7 @@ function processText() {
         break
 
       case 'base64':
-        if (selectedAction.value === 'escape') {
+        if (draft.value.selectedAction === 'escape') {
           output.value = utf8ToBase64(text)
         } else {
           output.value = base64ToUtf8(text)
@@ -158,9 +168,13 @@ function processText() {
   }
 }
 
-watch([input, selectedMode, selectedAction, urlComponentOnly], () => {
-  processText()
-})
+watch(
+  () => [draft.value.input, draft.value.selectedMode, draft.value.selectedAction, draft.value.urlComponentOnly],
+  () => {
+    processText()
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -184,8 +198,8 @@ watch([input, selectedMode, selectedAction, urlComponentOnly], () => {
               :key="m"
               type="button"
               class="px-2.5 py-1 text-xs font-medium rounded-md transition-all uppercase"
-              :class="selectedMode === m ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
-              @click="selectedMode = m"
+              :class="draft.selectedMode === m ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+              @click="draft.selectedMode = m"
             >
               {{ m }}
             </button>
@@ -196,16 +210,16 @@ watch([input, selectedMode, selectedAction, urlComponentOnly], () => {
             <button
               type="button"
               class="px-3 py-1 text-xs font-medium rounded-md transition-all"
-              :class="selectedAction === 'escape' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
-              @click="selectedAction = 'escape'"
+              :class="draft.selectedAction === 'escape' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+              @click="draft.selectedAction = 'escape'"
             >
               Escape / Encode
             </button>
             <button
               type="button"
               class="px-3 py-1 text-xs font-medium rounded-md transition-all"
-              :class="selectedAction === 'unescape' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
-              @click="selectedAction = 'unescape'"
+              :class="draft.selectedAction === 'unescape' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+              @click="draft.selectedAction = 'unescape'"
             >
               Unescape / Decode
             </button>
@@ -224,11 +238,11 @@ watch([input, selectedMode, selectedAction, urlComponentOnly], () => {
 
           <!-- URL Option -->
           <label
-            v-if="selectedMode === 'url'"
+            v-if="draft.selectedMode === 'url'"
             class="flex items-center gap-2 text-xs text-muted hover:text-highlighted cursor-pointer select-none"
           >
             <input
-              v-model="urlComponentOnly"
+              v-model="draft.urlComponentOnly"
               type="checkbox"
               class="rounded border-default text-primary focus:ring-primary/20"
             >
@@ -268,12 +282,12 @@ watch([input, selectedMode, selectedAction, urlComponentOnly], () => {
             />
             Input String
           </span>
-          <span class="font-mono text-[11px]">{{ input.length }} chars</span>
+          <span class="font-mono text-[11px]">{{ draft.input.length }} chars</span>
         </div>
         <div class="p-2 flex-1">
           <textarea
-            v-model="input"
-            :placeholder="`Enter text to ${selectedAction} in ${selectedMode.toUpperCase()} format...`"
+            v-model="draft.input"
+            :placeholder="`Enter text to ${draft.selectedAction} in ${draft.selectedMode.toUpperCase()} format...`"
             class="w-full h-96 p-3 bg-transparent font-mono text-xs focus:outline-none resize-y text-highlighted"
             spellcheck="false"
           />
@@ -287,7 +301,7 @@ watch([input, selectedMode, selectedAction, urlComponentOnly], () => {
               name="i-lucide-sparkles"
               class="size-4"
             />
-            {{ selectedAction === 'escape' ? 'Escaped Result' : 'Unescaped Result' }}
+            {{ draft.selectedAction === 'escape' ? 'Escaped Result' : 'Unescaped Result' }}
           </span>
           <div class="flex items-center gap-2">
             <span class="font-mono text-[11px]">{{ output.length }} chars</span>

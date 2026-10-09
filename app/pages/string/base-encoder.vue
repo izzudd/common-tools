@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useClipboardAction } from '~/composables/useClipboardAction'
+import { useToolDraft } from '~/composables/useToolDraft'
 
 type ToolMode = 'text' | 'number'
 type TextAction = 'encode' | 'decode'
@@ -14,22 +15,32 @@ type BaseFormat
     | 'octal'
     | 'decimal'
 
-// Page-isolated state
-const toolMode = ref<ToolMode>('text')
-const textAction = ref<TextAction>('encode')
-const selectedBase = ref<BaseFormat>('base64')
-const inputText = ref('')
+interface BaseEncoderDraft {
+  toolMode: ToolMode
+  textAction: TextAction
+  selectedBase: BaseFormat
+  inputText: string
+  hexCase: 'lower' | 'upper'
+  byteSeparator: 'space' | 'none' | 'colon'
+  base64Padding: boolean
+  numberInput: string
+  numberInputBase: number
+}
+
+const { state: draft, clearDraft } = useToolDraft<BaseEncoderDraft>('string-base-encoder', () => ({
+  toolMode: 'text',
+  textAction: 'encode',
+  selectedBase: 'base64',
+  inputText: '',
+  hexCase: 'lower',
+  byteSeparator: 'space',
+  base64Padding: true,
+  numberInput: '',
+  numberInputBase: 10
+}))
+
 const outputText = ref('')
 const errorMessage = ref<string | null>(null)
-
-// Text Mode options
-const hexCase = ref<'lower' | 'upper'>('lower')
-const byteSeparator = ref<'space' | 'none' | 'colon'>('space')
-const base64Padding = ref(true)
-
-// Number Mode state
-const numberInput = ref('')
-const numberInputBase = ref<number>(10)
 
 const { copied, copyToClipboard } = useClipboardAction()
 
@@ -297,36 +308,36 @@ function base62ToBytes(str: string): Uint8Array {
 // --- Text Processing ---
 function processText() {
   errorMessage.value = null
-  const input = inputText.value
+  const input = draft.value.inputText
   if (!input) {
     outputText.value = ''
     return
   }
 
   try {
-    if (textAction.value === 'encode') {
+    if (draft.value.textAction === 'encode') {
       const bytes = textEncoder.encode(input)
-      switch (selectedBase.value) {
+      switch (draft.value.selectedBase) {
         case 'base64':
-          outputText.value = bytesToBase64(bytes, false, base64Padding.value)
+          outputText.value = bytesToBase64(bytes, false, draft.value.base64Padding)
           break
         case 'base64url':
-          outputText.value = bytesToBase64(bytes, true, base64Padding.value)
+          outputText.value = bytesToBase64(bytes, true, draft.value.base64Padding)
           break
         case 'hex':
-          outputText.value = bytesToHex(bytes, hexCase.value === 'upper', byteSeparator.value)
+          outputText.value = bytesToHex(bytes, draft.value.hexCase === 'upper', draft.value.byteSeparator)
           break
         case 'binary':
-          outputText.value = bytesToBinary(bytes, byteSeparator.value)
+          outputText.value = bytesToBinary(bytes, draft.value.byteSeparator)
           break
         case 'octal':
-          outputText.value = bytesToOctal(bytes, byteSeparator.value)
+          outputText.value = bytesToOctal(bytes, draft.value.byteSeparator)
           break
         case 'decimal':
-          outputText.value = bytesToDecimal(bytes, byteSeparator.value)
+          outputText.value = bytesToDecimal(bytes, draft.value.byteSeparator)
           break
         case 'base32':
-          outputText.value = bytesToBase32(bytes, base64Padding.value)
+          outputText.value = bytesToBase32(bytes, draft.value.base64Padding)
           break
         case 'base58':
           outputText.value = bytesToBase58(bytes)
@@ -338,7 +349,7 @@ function processText() {
     } else {
       // Decode
       let bytes: Uint8Array
-      switch (selectedBase.value) {
+      switch (draft.value.selectedBase) {
         case 'base64':
         case 'base64url':
           bytes = base64ToBytes(input)
@@ -380,31 +391,25 @@ function processText() {
 }
 
 watch(
-  [
-    inputText,
-    textAction,
-    selectedBase,
-    hexCase,
-    byteSeparator,
-    base64Padding
-  ],
+  draft,
   () => {
-    if (toolMode.value === 'text') {
+    if (draft.value.toolMode === 'text') {
       processText()
     }
-  }
+  },
+  { deep: true, immediate: true }
 )
 
 function swapInputOutput() {
   const temp = outputText.value
-  textAction.value = textAction.value === 'encode' ? 'decode' : 'encode'
-  inputText.value = temp
+  draft.value.textAction = draft.value.textAction === 'encode' ? 'decode' : 'encode'
+  draft.value.inputText = temp
   processText()
 }
 
 // Multi-base live overview cards (when in text encode mode)
 const multiBasePreviews = computed(() => {
-  const text = inputText.value
+  const text = draft.value.inputText
   if (!text) return []
 
   try {
@@ -523,12 +528,12 @@ function baseToBigInt(str: string, alphabet: string): bigint {
 }
 
 const parsedBigInt = computed<{ value: bigint | null, error: string | null }>(() => {
-  const raw = numberInput.value.trim()
+  const raw = draft.value.numberInput.trim()
   if (!raw) return { value: null, error: null }
 
   try {
     let clean = raw
-    let effectiveBase = numberInputBase.value
+    let effectiveBase = draft.value.numberInputBase
 
     // Auto-detect prefixes if in standard base
     if (clean.startsWith('0x') || clean.startsWith('0X')) {
@@ -575,28 +580,24 @@ const numberBaseConversions = computed(() => {
 
 // Unified Controls
 function loadSample() {
-  if (toolMode.value === 'text') {
-    inputText.value = sampleText
-    textAction.value = 'encode'
+  if (draft.value.toolMode === 'text') {
+    draft.value.inputText = sampleText
+    draft.value.textAction = 'encode'
     processText()
   } else {
-    numberInput.value = sampleNumber
-    numberInputBase.value = 10
+    draft.value.numberInput = sampleNumber
+    draft.value.numberInputBase = 10
   }
 }
 
 function clearAll() {
-  if (toolMode.value === 'text') {
-    inputText.value = ''
-    outputText.value = ''
-    errorMessage.value = null
-  } else {
-    numberInput.value = ''
-  }
+  clearDraft()
+  outputText.value = ''
+  errorMessage.value = null
 }
 
 const copyableContent = computed(() => {
-  if (toolMode.value === 'text') {
+  if (draft.value.toolMode === 'text') {
     return outputText.value
   }
   return numberBaseConversions.value.length > 0
@@ -605,10 +606,10 @@ const copyableContent = computed(() => {
 })
 
 const textStats = computed(() => {
-  const inBytes = new Blob([inputText.value]).size
+  const inBytes = new Blob([draft.value.inputText]).size
   const outBytes = new Blob([outputText.value]).size
   return {
-    inLength: inputText.value.length,
+    inLength: draft.value.inputText.length,
     outLength: outputText.value.length,
     inBytes,
     outBytes
@@ -636,8 +637,8 @@ const textStats = computed(() => {
             <button
               type="button"
               class="px-3.5 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5"
-              :class="toolMode === 'text' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted hover:text-highlighted'"
-              @click="toolMode = 'text'"
+              :class="draft.toolMode === 'text' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted hover:text-highlighted'"
+              @click="draft.toolMode = 'text'"
             >
               <UIcon
                 name="i-lucide-type"
@@ -648,8 +649,8 @@ const textStats = computed(() => {
             <button
               type="button"
               class="px-3.5 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5"
-              :class="toolMode === 'number' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted hover:text-highlighted'"
-              @click="toolMode = 'number'"
+              :class="draft.toolMode === 'number' ? 'bg-primary text-white shadow-xs font-semibold' : 'text-muted hover:text-highlighted'"
+              @click="draft.toolMode = 'number'"
             >
               <UIcon
                 name="i-lucide-calculator"
@@ -661,7 +662,7 @@ const textStats = computed(() => {
 
           <!-- Text Mode Sub-controls -->
           <div
-            v-if="toolMode === 'text'"
+            v-if="draft.toolMode === 'text'"
             class="flex flex-wrap items-center gap-3"
           >
             <!-- Encode vs Decode -->
@@ -669,16 +670,16 @@ const textStats = computed(() => {
               <button
                 type="button"
                 class="px-3 py-1 text-xs font-medium rounded-md transition-all"
-                :class="textAction === 'encode' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
-                @click="textAction = 'encode'"
+                :class="draft.textAction === 'encode' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+                @click="draft.textAction = 'encode'"
               >
                 Encode
               </button>
               <button
                 type="button"
                 class="px-3 py-1 text-xs font-medium rounded-md transition-all"
-                :class="textAction === 'decode' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
-                @click="textAction = 'decode'"
+                :class="draft.textAction === 'decode' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+                @click="draft.textAction = 'decode'"
               >
                 Decode
               </button>
@@ -700,8 +701,8 @@ const textStats = computed(() => {
                 :key="b.id"
                 type="button"
                 class="px-2 py-0.5 rounded transition-all"
-                :class="selectedBase === b.id ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted hover:text-highlighted'"
-                @click="selectedBase = b.id"
+                :class="draft.selectedBase === b.id ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted hover:text-highlighted'"
+                @click="draft.selectedBase = b.id"
               >
                 {{ b.label }}
               </button>
@@ -722,12 +723,12 @@ const textStats = computed(() => {
 
         <!-- Extra Text Controls Row -->
         <div
-          v-if="toolMode === 'text'"
+          v-if="draft.toolMode === 'text'"
           class="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs pt-1 border-t border-default/50 w-full"
         >
           <!-- Hex Casing -->
           <div
-            v-if="selectedBase === 'hex'"
+            v-if="draft.selectedBase === 'hex'"
             class="flex items-center gap-2"
           >
             <span class="text-muted">Letter Case:</span>
@@ -735,16 +736,16 @@ const textStats = computed(() => {
               <button
                 type="button"
                 class="px-2 py-0.5 text-[11px] rounded"
-                :class="hexCase === 'lower' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
-                @click="hexCase = 'lower'"
+                :class="draft.hexCase === 'lower' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
+                @click="draft.hexCase = 'lower'"
               >
                 lowercase (a-f)
               </button>
               <button
                 type="button"
                 class="px-2 py-0.5 text-[11px] rounded"
-                :class="hexCase === 'upper' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
-                @click="hexCase = 'upper'"
+                :class="draft.hexCase === 'upper' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
+                @click="draft.hexCase = 'upper'"
               >
                 UPPERCASE (A-F)
               </button>
@@ -753,7 +754,7 @@ const textStats = computed(() => {
 
           <!-- Separator for byte-based formats -->
           <div
-            v-if="['hex', 'binary', 'octal', 'decimal'].includes(selectedBase)"
+            v-if="['hex', 'binary', 'octal', 'decimal'].includes(draft.selectedBase)"
             class="flex items-center gap-2"
           >
             <span class="text-muted">Byte Delimiter:</span>
@@ -761,24 +762,24 @@ const textStats = computed(() => {
               <button
                 type="button"
                 class="px-2 py-0.5 text-[11px] rounded"
-                :class="byteSeparator === 'space' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
-                @click="byteSeparator = 'space'"
+                :class="draft.byteSeparator === 'space' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
+                @click="draft.byteSeparator = 'space'"
               >
                 Space
               </button>
               <button
                 type="button"
                 class="px-2 py-0.5 text-[11px] rounded"
-                :class="byteSeparator === 'none' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
-                @click="byteSeparator = 'none'"
+                :class="draft.byteSeparator === 'none' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
+                @click="draft.byteSeparator = 'none'"
               >
                 None
               </button>
               <button
                 type="button"
                 class="px-2 py-0.5 text-[11px] rounded"
-                :class="byteSeparator === 'colon' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
-                @click="byteSeparator = 'colon'"
+                :class="draft.byteSeparator === 'colon' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
+                @click="draft.byteSeparator = 'colon'"
               >
                 Colon (:)
               </button>
@@ -787,11 +788,11 @@ const textStats = computed(() => {
 
           <!-- Base64 Padding -->
           <label
-            v-if="['base64', 'base64url', 'base32'].includes(selectedBase)"
+            v-if="['base64', 'base64url', 'base32'].includes(draft.selectedBase)"
             class="flex items-center gap-2 text-muted hover:text-highlighted cursor-pointer select-none"
           >
             <input
-              v-model="base64Padding"
+              v-model="draft.base64Padding"
               type="checkbox"
               class="rounded border-default text-primary focus:ring-primary/20"
             >
@@ -803,7 +804,7 @@ const textStats = computed(() => {
 
     <!-- Error message banner -->
     <div
-      v-if="toolMode === 'text' && errorMessage"
+      v-if="draft.toolMode === 'text' && errorMessage"
       class="p-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-500 flex items-start gap-3 text-xs"
     >
       <UIcon
@@ -820,7 +821,7 @@ const textStats = computed(() => {
     <!-- VIEW A: TEXT MODE                          -->
     <!-- ========================================== -->
     <div
-      v-if="toolMode === 'text'"
+      v-if="draft.toolMode === 'text'"
       class="space-y-6"
     >
       <!-- Metrics Bar -->
@@ -842,13 +843,13 @@ const textStats = computed(() => {
         <div>
           <span class="text-muted block text-[11px]">Current Format</span>
           <div class="font-mono mt-0.5 uppercase font-semibold text-primary">
-            {{ selectedBase }}
+            {{ draft.selectedBase }}
           </div>
         </div>
         <div>
           <span class="text-muted block text-[11px]">Operation</span>
           <div class="font-mono mt-0.5 font-semibold text-highlighted capitalize">
-            {{ textAction }}
+            {{ draft.textAction }}
           </div>
         </div>
       </div>
@@ -860,17 +861,17 @@ const textStats = computed(() => {
           <div class="flex items-center justify-between px-3.5 py-2.5 border-b border-default bg-neutral-100/60 dark:bg-neutral-900/60 text-xs font-medium text-muted">
             <span class="flex items-center gap-2">
               <UIcon
-                :name="textAction === 'encode' ? 'i-lucide-type' : 'i-lucide-binary'"
+                :name="draft.textAction === 'encode' ? 'i-lucide-type' : 'i-lucide-binary'"
                 class="size-4"
               />
-              {{ textAction === 'encode' ? 'Raw Text / String' : `Encoded ${selectedBase.toUpperCase()} String` }}
+              {{ draft.textAction === 'encode' ? 'Raw Text / String' : `Encoded ${draft.selectedBase.toUpperCase()} String` }}
             </span>
             <span class="font-mono text-[11px]">{{ textStats.inLength }} chars</span>
           </div>
           <div class="p-2 flex-1">
             <textarea
-              v-model="inputText"
-              :placeholder="textAction === 'encode' ? 'Type or paste plain text to encode into bases...' : `Paste valid ${selectedBase.toUpperCase()} encoded string to decode...`"
+              v-model="draft.inputText"
+              :placeholder="draft.textAction === 'encode' ? 'Type or paste plain text to encode into bases...' : `Paste valid ${draft.selectedBase.toUpperCase()} encoded string to decode...`"
               class="w-full h-80 p-3 bg-transparent font-mono text-xs focus:outline-none resize-y text-highlighted"
               spellcheck="false"
             />
@@ -882,10 +883,10 @@ const textStats = computed(() => {
           <div class="flex items-center justify-between px-3.5 py-2.5 border-b border-default bg-neutral-100/60 dark:bg-neutral-900/60 text-xs font-medium text-muted">
             <span class="flex items-center gap-2">
               <UIcon
-                :name="textAction === 'encode' ? 'i-lucide-binary' : 'i-lucide-type'"
+                :name="draft.textAction === 'encode' ? 'i-lucide-binary' : 'i-lucide-type'"
                 class="size-4"
               />
-              {{ textAction === 'encode' ? `Encoded ${selectedBase.toUpperCase()}` : 'Decoded Plain Text' }}
+              {{ draft.textAction === 'encode' ? `Encoded ${draft.selectedBase.toUpperCase()}` : 'Decoded Plain Text' }}
             </span>
             <div class="flex items-center gap-2">
               <span class="font-mono text-[11px]">{{ textStats.outLength }} chars</span>
@@ -914,7 +915,7 @@ const textStats = computed(() => {
 
       <!-- Live Multi-Base Overview Grid (When encoding) -->
       <div
-        v-if="textAction === 'encode' && multiBasePreviews.length > 0"
+        v-if="draft.textAction === 'encode' && multiBasePreviews.length > 0"
         class="space-y-3"
       >
         <div class="flex items-center justify-between">
@@ -984,7 +985,7 @@ const textStats = computed(() => {
           <div class="flex items-center gap-2 text-xs">
             <span class="text-muted">Input Base:</span>
             <select
-              v-model.number="numberInputBase"
+              v-model.number="draft.numberInputBase"
               class="px-2.5 py-1 text-xs rounded-lg border border-default bg-neutral-100 dark:bg-neutral-900 font-mono text-highlighted focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option
@@ -1000,14 +1001,14 @@ const textStats = computed(() => {
 
         <div class="relative">
           <input
-            v-model="numberInput"
+            v-model="draft.numberInput"
             type="text"
             placeholder="e.g. 1048576, 0x100000, 0b100000000000000000000..."
             class="w-full px-4 py-3 rounded-xl border border-default bg-neutral-100/60 dark:bg-neutral-950/60 font-mono text-sm text-highlighted focus:outline-none focus:ring-2 focus:ring-primary/50"
             spellcheck="false"
           >
           <div
-            v-if="numberInput"
+            v-if="draft.numberInput"
             class="absolute right-2.5 top-2.5 flex items-center gap-1"
           >
             <UButton
@@ -1015,7 +1016,7 @@ const textStats = computed(() => {
               size="xs"
               color="neutral"
               variant="ghost"
-              @click="numberInput = ''"
+              @click="draft.numberInput = ''"
             />
           </div>
         </div>

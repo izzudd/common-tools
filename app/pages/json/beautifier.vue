@@ -1,12 +1,22 @@
 <script setup lang="ts">
 import { useClipboardAction } from '~/composables/useClipboardAction'
+import { useToolDraft } from '~/composables/useToolDraft'
 
-// Page-isolated state
-const inputJson = ref('')
+interface BeautifierDraft {
+  inputJson: string
+  indentSize: '2' | '4' | 'tab'
+  sortKeys: boolean
+  mode: 'beautify' | 'minify'
+}
+
+const { state: draft, clearDraft } = useToolDraft<BeautifierDraft>('json-beautifier', () => ({
+  inputJson: '',
+  indentSize: '2',
+  sortKeys: false,
+  mode: 'beautify'
+}))
+
 const outputJson = ref('')
-const indentSize = ref<'2' | '4' | 'tab'>('2')
-const sortKeys = ref(false)
-const mode = ref<'beautify' | 'minify'>('beautify')
 const errorMessage = ref<string | null>(null)
 const errorLocation = ref<{ line: number, column: number } | null>(null)
 
@@ -29,12 +39,12 @@ const sampleJson = `{
 }`
 
 function loadSample() {
-  inputJson.value = sampleJson
+  draft.value.inputJson = sampleJson
   processJson()
 }
 
 function clearAll() {
-  inputJson.value = ''
+  clearDraft()
   outputJson.value = ''
   errorMessage.value = null
   errorLocation.value = null
@@ -60,7 +70,7 @@ function processJson() {
   errorMessage.value = null
   errorLocation.value = null
 
-  const raw = inputJson.value.trim()
+  const raw = draft.value.inputJson.trim()
   if (!raw) {
     outputJson.value = ''
     return
@@ -69,14 +79,14 @@ function processJson() {
   try {
     let parsed = JSON.parse(raw)
 
-    if (sortKeys.value) {
+    if (draft.value.sortKeys) {
       parsed = sortObjectKeys(parsed)
     }
 
-    if (mode.value === 'minify') {
+    if (draft.value.mode === 'minify') {
       outputJson.value = JSON.stringify(parsed)
     } else {
-      const space = indentSize.value === 'tab' ? '\t' : Number(indentSize.value)
+      const space = draft.value.indentSize === 'tab' ? '\t' : Number(draft.value.indentSize)
       outputJson.value = JSON.stringify(parsed, null, space)
     }
   } catch (err: unknown) {
@@ -100,18 +110,22 @@ function processJson() {
 }
 
 // Watch inputs and configuration to update output reactively
-watch([inputJson, indentSize, sortKeys, mode], () => {
-  processJson()
-})
+watch(
+  () => [draft.value.inputJson, draft.value.indentSize, draft.value.sortKeys, draft.value.mode],
+  () => {
+    processJson()
+  },
+  { immediate: true }
+)
 
 const stats = computed(() => {
-  const inBytes = new Blob([inputJson.value]).size
+  const inBytes = new Blob([draft.value.inputJson]).size
   const outBytes = new Blob([outputJson.value]).size
   const diff = inBytes - outBytes
   const pct = inBytes > 0 ? ((diff / inBytes) * 100).toFixed(1) : '0'
 
   return {
-    inChars: inputJson.value.length,
+    inChars: draft.value.inputJson.length,
     outChars: outputJson.value.length,
     inBytes,
     outBytes,
@@ -142,16 +156,16 @@ const stats = computed(() => {
             <button
               type="button"
               class="px-3 py-1 text-xs font-medium rounded-md transition-all"
-              :class="mode === 'beautify' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
-              @click="mode = 'beautify'"
+              :class="draft.mode === 'beautify' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+              @click="draft.mode = 'beautify'"
             >
               Beautify
             </button>
             <button
               type="button"
               class="px-3 py-1 text-xs font-medium rounded-md transition-all"
-              :class="mode === 'minify' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
-              @click="mode = 'minify'"
+              :class="draft.mode === 'minify' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+              @click="draft.mode = 'minify'"
             >
               Minify
             </button>
@@ -159,7 +173,7 @@ const stats = computed(() => {
 
           <!-- Indentation select (when beautifying) -->
           <div
-            v-if="mode === 'beautify'"
+            v-if="draft.mode === 'beautify'"
             class="flex items-center gap-1.5 text-xs"
           >
             <span class="text-muted">Indent:</span>
@@ -167,24 +181,24 @@ const stats = computed(() => {
               <button
                 type="button"
                 class="px-2 py-0.5 text-xs rounded transition-all"
-                :class="indentSize === '2' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
-                @click="indentSize = '2'"
+                :class="draft.indentSize === '2' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
+                @click="draft.indentSize = '2'"
               >
                 2 spaces
               </button>
               <button
                 type="button"
                 class="px-2 py-0.5 text-xs rounded transition-all"
-                :class="indentSize === '4' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
-                @click="indentSize = '4'"
+                :class="draft.indentSize === '4' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
+                @click="draft.indentSize = '4'"
               >
                 4 spaces
               </button>
               <button
                 type="button"
                 class="px-2 py-0.5 text-xs rounded transition-all"
-                :class="indentSize === 'tab' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
-                @click="indentSize = 'tab'"
+                :class="draft.indentSize === 'tab' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
+                @click="draft.indentSize = 'tab'"
               >
                 Tab
               </button>
@@ -194,7 +208,7 @@ const stats = computed(() => {
           <!-- Sort keys toggle -->
           <label class="flex items-center gap-2 text-xs text-muted hover:text-highlighted cursor-pointer select-none">
             <input
-              v-model="sortKeys"
+              v-model="draft.sortKeys"
               type="checkbox"
               class="rounded border-default text-primary focus:ring-primary/20"
             >
@@ -210,7 +224,7 @@ const stats = computed(() => {
           <span>Lines: <strong class="text-highlighted">{{ stats.lines }}</strong></span>
           <span>Size: <strong class="text-highlighted">{{ stats.outBytes }} B</strong></span>
           <span
-            v-if="mode === 'minify' && Number(stats.pct) > 0"
+            v-if="draft.mode === 'minify' && Number(stats.pct) > 0"
             class="text-emerald-500 font-semibold"
           >
             Saved: {{ stats.pct }}%
@@ -260,7 +274,7 @@ const stats = computed(() => {
         </div>
         <div class="p-2 flex-1">
           <textarea
-            v-model="inputJson"
+            v-model="draft.inputJson"
             placeholder="Paste or write raw JSON here..."
             class="w-full h-96 p-3 bg-transparent font-mono text-xs focus:outline-none resize-y text-highlighted"
             spellcheck="false"

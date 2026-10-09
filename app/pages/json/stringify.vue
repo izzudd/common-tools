@@ -1,12 +1,22 @@
 <script setup lang="ts">
 import { useClipboardAction } from '~/composables/useClipboardAction'
+import { useToolDraft } from '~/composables/useToolDraft'
 
-// Page-isolated state
-const input = ref('')
+interface StringifyDraft {
+  input: string
+  conversionMode: 'stringify' | 'jsonify'
+  quoteStyle: 'double' | 'single' | 'backtick'
+  compactBeforeStringify: boolean
+}
+
+const { state: draft, clearDraft } = useToolDraft<StringifyDraft>('json-stringify', () => ({
+  input: '',
+  conversionMode: 'stringify',
+  quoteStyle: 'double',
+  compactBeforeStringify: true
+}))
+
 const output = ref('')
-const conversionMode = ref<'stringify' | 'jsonify'>('stringify')
-const quoteStyle = ref<'double' | 'single' | 'backtick'>('double')
-const compactBeforeStringify = ref(true)
 const errorMessage = ref<string | null>(null)
 
 const { copied, copyToClipboard } = useClipboardAction()
@@ -20,23 +30,23 @@ const sampleJson = `{
 const sampleEscapedString = `"{\\"name\\":\\"DevPocket\\",\\"features\\":[\\"zero-latency\\",\\"client-only\\"],\\"meta\\":{\\"active\\":true,\\"code\\":200}}"`
 
 function loadSample() {
-  if (conversionMode.value === 'stringify') {
-    input.value = sampleJson
+  if (draft.value.conversionMode === 'stringify') {
+    draft.value.input = sampleJson
   } else {
-    input.value = sampleEscapedString
+    draft.value.input = sampleEscapedString
   }
   process()
 }
 
 function clearAll() {
-  input.value = ''
+  clearDraft()
   output.value = ''
   errorMessage.value = null
 }
 
 function process() {
   errorMessage.value = null
-  const raw = input.value.trim()
+  const raw = draft.value.input.trim()
 
   if (!raw) {
     output.value = ''
@@ -44,18 +54,18 @@ function process() {
   }
 
   try {
-    if (conversionMode.value === 'stringify') {
+    if (draft.value.conversionMode === 'stringify') {
       // Step 1: Ensure input is valid JSON
       const parsed = JSON.parse(raw)
-      const baseStr = compactBeforeStringify.value
+      const baseStr = draft.value.compactBeforeStringify
         ? JSON.stringify(parsed)
         : JSON.stringify(parsed, null, 2)
 
       // Step 2: Stringify according to chosen quote format
-      if (quoteStyle.value === 'double') {
+      if (draft.value.quoteStyle === 'double') {
         // Standard JSON string: "{\"foo\":\"bar\"}"
         output.value = JSON.stringify(baseStr)
-      } else if (quoteStyle.value === 'single') {
+      } else if (draft.value.quoteStyle === 'single') {
         // Single quote escaped string: '{"foo":"bar"}'
         const escaped = baseStr.replace(/\\/g, '\\\\').replace(/'/g, '\\\'')
         output.value = `'${escaped}'`
@@ -106,25 +116,29 @@ function process() {
   }
 }
 
-watch([input, conversionMode, quoteStyle, compactBeforeStringify], () => {
-  process()
-})
+watch(
+  () => [draft.value.input, draft.value.conversionMode, draft.value.quoteStyle, draft.value.compactBeforeStringify],
+  () => {
+    process()
+  },
+  { immediate: true }
+)
 
 function swapDirection() {
   const currentOutput = output.value
-  conversionMode.value = conversionMode.value === 'stringify' ? 'jsonify' : 'stringify'
-  input.value = currentOutput
+  draft.value.conversionMode = draft.value.conversionMode === 'stringify' ? 'jsonify' : 'stringify'
+  draft.value.input = currentOutput
   process()
 }
 
 const inputPlaceholder = computed(() => {
-  return conversionMode.value === 'stringify'
+  return draft.value.conversionMode === 'stringify'
     ? 'Paste raw JSON here...'
     : 'Paste escaped string (e.g. "{\\"a\\": 1}")...'
 })
 
 const outputPlaceholder = computed(() => {
-  return conversionMode.value === 'stringify'
+  return draft.value.conversionMode === 'stringify'
     ? 'Escaped string output will appear here...'
     : 'Formatted JSON will appear here...'
 })
@@ -149,16 +163,16 @@ const outputPlaceholder = computed(() => {
             <button
               type="button"
               class="px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5"
-              :class="conversionMode === 'stringify' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
-              @click="conversionMode = 'stringify'"
+              :class="draft.conversionMode === 'stringify' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+              @click="draft.conversionMode = 'stringify'"
             >
               <span>JSON → Escaped String</span>
             </button>
             <button
               type="button"
               class="px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1.5"
-              :class="conversionMode === 'jsonify' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
-              @click="conversionMode = 'jsonify'"
+              :class="draft.conversionMode === 'jsonify' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+              @click="draft.conversionMode = 'jsonify'"
             >
               <span>Escaped String → JSON</span>
             </button>
@@ -175,31 +189,31 @@ const outputPlaceholder = computed(() => {
           />
 
           <!-- Stringify specific options -->
-          <template v-if="conversionMode === 'stringify'">
+          <template v-if="draft.conversionMode === 'stringify'">
             <div class="flex items-center gap-1.5 text-xs">
               <span class="text-muted">Enclose with:</span>
               <div class="inline-flex rounded-lg border border-default p-0.5 bg-neutral-100 dark:bg-neutral-900">
                 <button
                   type="button"
                   class="px-2 py-0.5 text-xs rounded transition-all font-mono"
-                  :class="quoteStyle === 'double' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
-                  @click="quoteStyle = 'double'"
+                  :class="draft.quoteStyle === 'double' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
+                  @click="draft.quoteStyle = 'double'"
                 >
                   "..."
                 </button>
                 <button
                   type="button"
                   class="px-2 py-0.5 text-xs rounded transition-all font-mono"
-                  :class="quoteStyle === 'single' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
-                  @click="quoteStyle = 'single'"
+                  :class="draft.quoteStyle === 'single' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
+                  @click="draft.quoteStyle = 'single'"
                 >
                   '...'
                 </button>
                 <button
                   type="button"
                   class="px-2 py-0.5 text-xs rounded transition-all font-mono"
-                  :class="quoteStyle === 'backtick' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
-                  @click="quoteStyle = 'backtick'"
+                  :class="draft.quoteStyle === 'backtick' ? 'bg-neutral-200 dark:bg-neutral-800 text-highlighted font-semibold' : 'text-muted'"
+                  @click="draft.quoteStyle = 'backtick'"
                 >
                   `...`
                 </button>
@@ -208,7 +222,7 @@ const outputPlaceholder = computed(() => {
 
             <label class="flex items-center gap-2 text-xs text-muted hover:text-highlighted cursor-pointer select-none">
               <input
-                v-model="compactBeforeStringify"
+                v-model="draft.compactBeforeStringify"
                 type="checkbox"
                 class="rounded border-default text-primary focus:ring-primary/20"
               >
@@ -247,13 +261,13 @@ const outputPlaceholder = computed(() => {
               name="i-lucide-file-text"
               class="size-4"
             />
-            {{ conversionMode === 'stringify' ? 'Input Raw JSON' : 'Input Escaped String' }}
+            {{ draft.conversionMode === 'stringify' ? 'Input Raw JSON' : 'Input Escaped String' }}
           </span>
-          <span class="font-mono text-[11px]">{{ input.length }} chars</span>
+          <span class="font-mono text-[11px]">{{ draft.input.length }} chars</span>
         </div>
         <div class="p-2 flex-1">
           <textarea
-            v-model="input"
+            v-model="draft.input"
             :placeholder="inputPlaceholder"
             class="w-full h-96 p-3 bg-transparent font-mono text-xs focus:outline-none resize-y text-highlighted"
             spellcheck="false"
@@ -268,7 +282,7 @@ const outputPlaceholder = computed(() => {
               name="i-lucide-check-circle"
               class="size-4"
             />
-            {{ conversionMode === 'stringify' ? 'Escaped String Output' : 'Parsed Clean JSON' }}
+            {{ draft.conversionMode === 'stringify' ? 'Escaped String Output' : 'Parsed Clean JSON' }}
           </span>
           <div class="flex items-center gap-2">
             <span class="font-mono text-[11px]">{{ output.length }} chars</span>

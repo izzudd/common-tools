@@ -1,27 +1,42 @@
 <script setup lang="ts">
 import { useClipboardAction } from '~/composables/useClipboardAction'
+import { useToolDraft } from '~/composables/useToolDraft'
 
 type SeparatorType = '-' | '_' | '.' | '/' | '' | 'custom'
 type CasingType = 'lower' | 'upper' | 'title' | 'preserve'
 type CharsetType = 'ascii' | 'unicode'
 
-// Page-isolated state
-const input = ref('')
+interface SlugifyDraft {
+  input: string
+  baseUrl: string
+  separatorType: SeparatorType
+  customSeparator: string
+  casing: CasingType
+  charset: CharsetType
+  normalizeAccents: boolean
+  convertAmpersand: boolean
+  removeStopWords: boolean
+  batchMode: boolean
+  maxLength: number | ''
+  truncateWordBoundary: boolean
+}
+
+const { state: draft, clearDraft } = useToolDraft<SlugifyDraft>('string-slugify', () => ({
+  input: '',
+  baseUrl: 'https://example.com/posts/',
+  separatorType: '-',
+  customSeparator: '-',
+  casing: 'lower',
+  charset: 'ascii',
+  normalizeAccents: true,
+  convertAmpersand: true,
+  removeStopWords: false,
+  batchMode: false,
+  maxLength: '',
+  truncateWordBoundary: true
+}))
+
 const output = ref('')
-const baseUrl = ref('https://example.com/posts/')
-
-// Configuration state
-const separatorType = ref<SeparatorType>('-')
-const customSeparator = ref('-')
-const casing = ref<CasingType>('lower')
-const charset = ref<CharsetType>('ascii')
-const normalizeAccents = ref(true)
-const convertAmpersand = ref(true)
-const removeStopWords = ref(false)
-const batchMode = ref(false)
-const maxLength = ref<number | ''>('')
-const truncateWordBoundary = ref(true)
-
 const { copied, copyToClipboard } = useClipboardAction()
 
 const sampleTitle = `Crème Brûlée & Café au Lait: The Ultimate 2026 Developer's Guide! #101`
@@ -64,20 +79,20 @@ const SPECIAL_CHAR_MAP: Record<string, string> = {
 }
 
 function loadSample() {
-  input.value = sampleTitle
+  draft.value.input = sampleTitle
   processSlug()
 }
 
 function clearAll() {
-  input.value = ''
+  clearDraft()
   output.value = ''
 }
 
 function getEffectiveSeparator(): string {
-  if (separatorType.value === 'custom') {
-    return customSeparator.value
+  if (draft.value.separatorType === 'custom') {
+    return draft.value.customSeparator
   }
-  return separatorType.value
+  return draft.value.separatorType
 }
 
 function transliterate(str: string): string {
@@ -97,18 +112,18 @@ function slugifyLine(line: string, sep: string): string {
   if (!text) return ''
 
   // 1. Convert Ampersand
-  if (convertAmpersand.value) {
+  if (draft.value.convertAmpersand) {
     text = text.replace(/&/g, ' and ')
   }
 
   // 2. Transliterate accents
-  if (normalizeAccents.value) {
+  if (draft.value.normalizeAccents) {
     text = transliterate(text)
   }
 
   // 3. Extract tokens according to charset
   let rawTokens: string[] = []
-  if (charset.value === 'ascii') {
+  if (draft.value.charset === 'ascii') {
     rawTokens = text.match(/[a-zA-Z0-9]+/g) || []
   } else {
     // Unicode letters & numbers
@@ -118,7 +133,7 @@ function slugifyLine(line: string, sep: string): string {
   if (rawTokens.length === 0) return ''
 
   // 4. Stop words removal
-  if (removeStopWords.value) {
+  if (draft.value.removeStopWords) {
     const filtered = rawTokens.filter(token => !STOP_WORDS.has(token.toLowerCase()))
     if (filtered.length > 0) {
       rawTokens = filtered
@@ -127,7 +142,7 @@ function slugifyLine(line: string, sep: string): string {
 
   // 5. Apply casing
   const casedTokens = rawTokens.map((token) => {
-    switch (casing.value) {
+    switch (draft.value.casing) {
       case 'lower':
         return token.toLowerCase()
       case 'upper':
@@ -154,9 +169,9 @@ function slugifyLine(line: string, sep: string): string {
   }
 
   // 8. Truncate if max length is set
-  const limit = typeof maxLength.value === 'number' && maxLength.value > 0 ? maxLength.value : 0
+  const limit = typeof draft.value.maxLength === 'number' && draft.value.maxLength > 0 ? draft.value.maxLength : 0
   if (limit > 0 && slug.length > limit) {
-    if (truncateWordBoundary.value && sep) {
+    if (draft.value.truncateWordBoundary && sep) {
       const truncated = slug.slice(0, limit)
       const lastSepIndex = truncated.lastIndexOf(sep)
       if (lastSepIndex > 0) {
@@ -178,7 +193,7 @@ function slugifyLine(line: string, sep: string): string {
 }
 
 function processSlug() {
-  const raw = input.value
+  const raw = draft.value.input
   if (!raw.trim()) {
     output.value = ''
     return
@@ -186,7 +201,7 @@ function processSlug() {
 
   const sep = getEffectiveSeparator()
 
-  if (batchMode.value) {
+  if (draft.value.batchMode) {
     const lines = raw.split(/\r?\n/)
     const slugged = lines.map(line => slugifyLine(line, sep))
     output.value = slugged.join('\n')
@@ -196,39 +211,28 @@ function processSlug() {
 }
 
 watch(
-  [
-    input,
-    separatorType,
-    customSeparator,
-    casing,
-    charset,
-    normalizeAccents,
-    convertAmpersand,
-    removeStopWords,
-    batchMode,
-    maxLength,
-    truncateWordBoundary
-  ],
+  draft,
   () => {
     processSlug()
-  }
+  },
+  { deep: true, immediate: true }
 )
 
 // Extract base tokens from input for alternative casing cards
 const cleanTokens = computed<string[]>(() => {
-  const raw = input.value.trim()
+  const raw = draft.value.input.trim()
   if (!raw) return []
 
   let text = raw
-  if (convertAmpersand.value) {
+  if (draft.value.convertAmpersand) {
     text = text.replace(/&/g, ' and ')
   }
-  if (normalizeAccents.value) {
+  if (draft.value.normalizeAccents) {
     text = transliterate(text)
   }
 
   const tokens = text.match(/[a-zA-Z0-9]+/g) || []
-  if (removeStopWords.value) {
+  if (draft.value.removeStopWords) {
     const filtered = tokens.filter(t => !STOP_WORDS.has(t.toLowerCase()))
     return filtered.length > 0 ? filtered : tokens
   }
@@ -289,14 +293,14 @@ const variations = computed(() => {
 // Full URL Preview
 const fullUrl = computed(() => {
   if (!output.value) return ''
-  const base = baseUrl.value.trim().replace(/\/+$/, '')
+  const base = draft.value.baseUrl.trim().replace(/\/+$/, '')
   // If batch mode, only show first slug in URL preview
   const firstSlug = output.value.split('\n')[0] || ''
   return `${base}/${firstSlug}`
 })
 
 const stats = computed(() => {
-  const inText = input.value
+  const inText = draft.value.input
   const outText = output.value
   const countWords = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
   const countLines = (s: string) => (s ? s.split(/\r?\n/).length : 0)
@@ -333,61 +337,61 @@ const stats = computed(() => {
               <button
                 type="button"
                 class="px-2.5 py-1 text-xs font-mono font-medium rounded-md transition-all"
-                :class="separatorType === '-' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+                :class="draft.separatorType === '-' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
                 title="Hyphen (-)"
-                @click="separatorType = '-'"
+                @click="draft.separatorType = '-'"
               >
                 -
               </button>
               <button
                 type="button"
                 class="px-2.5 py-1 text-xs font-mono font-medium rounded-md transition-all"
-                :class="separatorType === '_' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+                :class="draft.separatorType === '_' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
                 title="Underscore (_)"
-                @click="separatorType = '_'"
+                @click="draft.separatorType = '_'"
               >
                 _
               </button>
               <button
                 type="button"
                 class="px-2.5 py-1 text-xs font-mono font-medium rounded-md transition-all"
-                :class="separatorType === '.' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+                :class="draft.separatorType === '.' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
                 title="Dot (.)"
-                @click="separatorType = '.'"
+                @click="draft.separatorType = '.'"
               >
                 .
               </button>
               <button
                 type="button"
                 class="px-2.5 py-1 text-xs font-mono font-medium rounded-md transition-all"
-                :class="separatorType === '/' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+                :class="draft.separatorType === '/' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
                 title="Slash (/)"
-                @click="separatorType = '/'"
+                @click="draft.separatorType = '/'"
               >
                 /
               </button>
               <button
                 type="button"
                 class="px-2.5 py-1 text-xs font-medium rounded-md transition-all"
-                :class="separatorType === '' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+                :class="draft.separatorType === '' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
                 title="None (No separator)"
-                @click="separatorType = ''"
+                @click="draft.separatorType = ''"
               >
                 None
               </button>
               <button
                 type="button"
                 class="px-2.5 py-1 text-xs font-medium rounded-md transition-all"
-                :class="separatorType === 'custom' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+                :class="draft.separatorType === 'custom' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
                 title="Custom character"
-                @click="separatorType = 'custom'"
+                @click="draft.separatorType = 'custom'"
               >
                 Custom
               </button>
             </div>
             <input
-              v-if="separatorType === 'custom'"
-              v-model="customSeparator"
+              v-if="draft.separatorType === 'custom'"
+              v-model="draft.customSeparator"
               type="text"
               maxlength="5"
               placeholder="Sep"
@@ -402,32 +406,32 @@ const stats = computed(() => {
               <button
                 type="button"
                 class="px-2.5 py-1 text-xs font-medium rounded-md transition-all"
-                :class="casing === 'lower' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
-                @click="casing = 'lower'"
+                :class="draft.casing === 'lower' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+                @click="draft.casing = 'lower'"
               >
                 lowercase
               </button>
               <button
                 type="button"
                 class="px-2.5 py-1 text-xs font-medium rounded-md transition-all"
-                :class="casing === 'upper' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
-                @click="casing = 'upper'"
+                :class="draft.casing === 'upper' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+                @click="draft.casing = 'upper'"
               >
                 UPPERCASE
               </button>
               <button
                 type="button"
                 class="px-2.5 py-1 text-xs font-medium rounded-md transition-all"
-                :class="casing === 'title' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
-                @click="casing = 'title'"
+                :class="draft.casing === 'title' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+                @click="draft.casing = 'title'"
               >
                 Title-Case
               </button>
               <button
                 type="button"
                 class="px-2.5 py-1 text-xs font-medium rounded-md transition-all"
-                :class="casing === 'preserve' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
-                @click="casing = 'preserve'"
+                :class="draft.casing === 'preserve' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+                @click="draft.casing = 'preserve'"
               >
                 Preserve
               </button>
@@ -441,18 +445,18 @@ const stats = computed(() => {
               <button
                 type="button"
                 class="px-2.5 py-1 text-xs font-medium rounded-md transition-all"
-                :class="charset === 'ascii' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+                :class="draft.charset === 'ascii' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
                 title="Strict alphanumeric [a-z0-9] only"
-                @click="charset === 'ascii'"
+                @click="draft.charset === 'ascii'"
               >
                 ASCII Safe
               </button>
               <button
                 type="button"
                 class="px-2.5 py-1 text-xs font-medium rounded-md transition-all"
-                :class="charset === 'unicode' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+                :class="draft.charset === 'unicode' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
                 title="Allow International Unicode letters and numbers"
-                @click="charset = 'unicode'"
+                @click="draft.charset = 'unicode'"
               >
                 Unicode
               </button>
@@ -464,7 +468,7 @@ const stats = computed(() => {
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs pt-1 border-t border-default/50 w-full">
           <label class="flex items-center gap-2 text-muted hover:text-highlighted cursor-pointer select-none">
             <input
-              v-model="normalizeAccents"
+              v-model="draft.normalizeAccents"
               type="checkbox"
               class="rounded border-default text-primary focus:ring-primary/20"
             >
@@ -473,7 +477,7 @@ const stats = computed(() => {
 
           <label class="flex items-center gap-2 text-muted hover:text-highlighted cursor-pointer select-none">
             <input
-              v-model="convertAmpersand"
+              v-model="draft.convertAmpersand"
               type="checkbox"
               class="rounded border-default text-primary focus:ring-primary/20"
             >
@@ -482,7 +486,7 @@ const stats = computed(() => {
 
           <label class="flex items-center gap-2 text-muted hover:text-highlighted cursor-pointer select-none">
             <input
-              v-model="removeStopWords"
+              v-model="draft.removeStopWords"
               type="checkbox"
               class="rounded border-default text-primary focus:ring-primary/20"
             >
@@ -491,7 +495,7 @@ const stats = computed(() => {
 
           <label class="flex items-center gap-2 text-muted hover:text-highlighted cursor-pointer select-none">
             <input
-              v-model="batchMode"
+              v-model="draft.batchMode"
               type="checkbox"
               class="rounded border-default text-primary focus:ring-primary/20"
             >
@@ -502,18 +506,18 @@ const stats = computed(() => {
           <div class="flex items-center gap-2">
             <span class="text-muted">Max Length:</span>
             <input
-              v-model.number="maxLength"
+              v-model.number="draft.maxLength"
               type="number"
               min="0"
               placeholder="0 (off)"
               class="w-16 px-2 py-0.5 text-xs font-mono rounded border border-default bg-neutral-100 dark:bg-neutral-900 focus:outline-none focus:ring-1 focus:ring-primary"
             >
             <label
-              v-if="typeof maxLength === 'number' && maxLength > 0"
+              v-if="typeof draft.maxLength === 'number' && draft.maxLength > 0"
               class="flex items-center gap-1.5 text-muted hover:text-highlighted cursor-pointer select-none"
             >
               <input
-                v-model="truncateWordBoundary"
+                v-model="draft.truncateWordBoundary"
                 type="checkbox"
                 class="rounded border-default text-primary focus:ring-primary/20"
               >
@@ -558,7 +562,7 @@ const stats = computed(() => {
 
     <!-- Live URL Simulator Banner -->
     <div
-      v-if="output && !batchMode"
+      v-if="output && !draft.batchMode"
       class="p-4 rounded-xl border border-default bg-neutral-100/60 dark:bg-neutral-900/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
     >
       <div class="flex items-center gap-2.5 min-w-0 flex-1 w-full">
@@ -568,7 +572,7 @@ const stats = computed(() => {
         />
         <div class="flex items-center gap-1.5 min-w-0 flex-1 font-mono text-xs overflow-hidden">
           <input
-            v-model="baseUrl"
+            v-model="draft.baseUrl"
             type="text"
             placeholder="Base URL..."
             class="text-muted hover:text-highlighted bg-transparent border-b border-dashed border-default focus:outline-none focus:border-primary shrink-0 max-w-[180px] sm:max-w-[220px]"
@@ -602,8 +606,8 @@ const stats = computed(() => {
         </div>
         <div class="p-2 flex-1">
           <textarea
-            v-model="input"
-            :placeholder="batchMode ? 'Paste multiple titles (one per line)...' : 'Paste article title, heading, product name, or sentence to slugify...'"
+            v-model="draft.input"
+            :placeholder="draft.batchMode ? 'Paste multiple titles (one per line)...' : 'Paste article title, heading, product name, or sentence to slugify...'"
             class="w-full h-80 p-3 bg-transparent font-mono text-xs focus:outline-none resize-y text-highlighted"
             spellcheck="false"
           />
@@ -646,7 +650,7 @@ const stats = computed(() => {
 
     <!-- Quick Format Variations Grid (Single mode) -->
     <div
-      v-if="variations.length > 0 && !batchMode"
+      v-if="variations.length > 0 && !draft.batchMode"
       class="space-y-3"
     >
       <div class="flex items-center justify-between">

@@ -1,9 +1,18 @@
 <script setup lang="ts">
-// Page-isolated state
-const rawJson = ref('')
+import { useToolDraft } from '~/composables/useToolDraft'
+
+interface VisualizerDraft {
+  rawJson: string
+  activeView: 'split' | 'tree'
+}
+
+const { state: draft, clearDraft } = useToolDraft<VisualizerDraft>('json-visualizer', () => ({
+  rawJson: '',
+  activeView: 'split'
+}))
+
 const parsedData = ref<unknown | null>(null)
 const errorMessage = ref<string | null>(null)
-const activeView = ref<'split' | 'tree'>('split')
 
 const sampleData = `{
   "api": {
@@ -33,19 +42,19 @@ const sampleData = `{
 }`
 
 function loadSample() {
-  rawJson.value = sampleData
+  draft.value.rawJson = sampleData
   parseInput()
 }
 
 function clearAll() {
-  rawJson.value = ''
+  clearDraft()
   parsedData.value = null
   errorMessage.value = null
 }
 
 function parseInput() {
   errorMessage.value = null
-  const input = rawJson.value.trim()
+  const input = draft.value.rawJson.trim()
 
   if (!input) {
     parsedData.value = null
@@ -64,9 +73,13 @@ function parseInput() {
   }
 }
 
-watch(rawJson, () => {
-  parseInput()
-})
+watch(
+  () => draft.value.rawJson,
+  () => {
+    parseInput()
+  },
+  { immediate: true }
+)
 
 const formattedJson = computed(() => {
   if (parsedData.value === null) return ''
@@ -96,16 +109,16 @@ const formattedJson = computed(() => {
             <button
               type="button"
               class="px-2.5 py-1 text-xs font-medium rounded-md transition-all"
-              :class="activeView === 'split' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
-              @click="activeView = 'split'"
+              :class="draft.activeView === 'split' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+              @click="draft.activeView = 'split'"
             >
               Split View
             </button>
             <button
               type="button"
               class="px-2.5 py-1 text-xs font-medium rounded-md transition-all"
-              :class="activeView === 'tree' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
-              @click="activeView = 'tree'"
+              :class="draft.activeView === 'tree' ? 'bg-primary text-white shadow-xs' : 'text-muted hover:text-highlighted'"
+              @click="draft.activeView = 'tree'"
             >
               Tree Only
             </button>
@@ -136,11 +149,11 @@ const formattedJson = computed(() => {
     <!-- Main Content Area -->
     <div
       class="grid gap-4"
-      :class="activeView === 'split' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'"
+      :class="draft.activeView === 'split' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'"
     >
       <!-- Raw JSON Input (hidden in tree-only mode for focus) -->
       <div
-        v-if="activeView === 'split'"
+        v-if="draft.activeView === 'split'"
         class="flex flex-col rounded-xl border border-default bg-neutral-100/30 dark:bg-neutral-900/40 overflow-hidden"
       >
         <div class="flex items-center justify-between px-3.5 py-2.5 border-b border-default bg-neutral-100/60 dark:bg-neutral-900/60 text-xs font-medium text-muted">
@@ -151,11 +164,11 @@ const formattedJson = computed(() => {
             />
             JSON Source
           </span>
-          <span class="font-mono text-[11px]">{{ rawJson.length }} chars</span>
+          <span class="font-mono text-[11px]">{{ draft.rawJson.length }} chars</span>
         </div>
         <div class="p-2 flex-1">
           <textarea
-            v-model="rawJson"
+            v-model="draft.rawJson"
             placeholder="Paste JSON to generate interactive tree..."
             class="w-full h-[550px] p-3 bg-transparent font-mono text-xs focus:outline-none resize-y text-highlighted"
             spellcheck="false"

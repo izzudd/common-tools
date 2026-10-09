@@ -7,21 +7,33 @@ import {
   tableToMarkdown,
   tableToSql
 } from '~/utils/csv'
+import { useToolDraft } from '~/composables/useToolDraft'
 
-// Page-isolated state
-const rawInput = ref('')
-const headers = ref<string[]>([])
-const rows = ref<string[][]>([])
-const delimiter = ref<string>(',')
+interface TableEditorDraft {
+  rawInput: string
+  headers: string[]
+  rows: string[][]
+  delimiter: string
+  searchQuery: string
+  sortColumn: number | null
+  sortDirection: 'asc' | 'desc'
+  currentPage: number
+  pageSize: number
+}
 
-// View & Filter state
-const searchQuery = ref('')
-const sortColumn = ref<number | null>(null)
-const sortDirection = ref<'asc' | 'desc'>('asc')
-const currentPage = ref(1)
-const pageSize = ref(15)
+const { state: draft, clearDraft } = useToolDraft<TableEditorDraft>('table-editor', () => ({
+  rawInput: '',
+  headers: [],
+  rows: [],
+  delimiter: ',',
+  searchQuery: '',
+  sortColumn: null,
+  sortDirection: 'asc',
+  currentPage: 1,
+  pageSize: 15
+}))
 
-// Editing state
+// Transient Editing state
 const editingHeaderIndex = ref<number | null>(null)
 const editingHeaderValue = ref('')
 const swapSourceCol = ref<number>(0)
@@ -46,24 +58,20 @@ function loadSample() {
 }
 
 function clearAll() {
-  rawInput.value = ''
-  headers.value = []
-  rows.value = []
-  sortColumn.value = null
-  searchQuery.value = ''
-  currentPage.value = 1
+  clearDraft()
+  showRawInput.value = false
 }
 
 function loadData(content: string) {
   if (!content.trim()) return
-  rawInput.value = content
+  draft.value.rawInput = content
   const parsed = parseCsv(content)
-  headers.value = parsed.headers
-  rows.value = parsed.rows
+  draft.value.headers = parsed.headers
+  draft.value.rows = parsed.rows
   showRawInput.value = false
-  currentPage.value = 1
-  sortColumn.value = null
-  if (headers.value.length >= 2) {
+  draft.value.currentPage = 1
+  draft.value.sortColumn = null
+  if (draft.value.headers.length >= 2) {
     swapSourceCol.value = 0
     swapTargetCol.value = 1
   }
@@ -83,7 +91,7 @@ function handleWindowPaste(e: ClipboardEvent) {
     loadData(pasted)
     toast.add({
       title: 'Table Imported',
-      description: `Parsed ${headers.value.length} columns and ${rows.value.length} rows from clipboard`,
+      description: `Parsed ${draft.value.headers.length} columns and ${draft.value.rows.length} rows from clipboard`,
       color: 'success',
       icon: 'i-lucide-check'
     })
@@ -105,7 +113,7 @@ async function pasteFromClipboard() {
       loadData(text)
       toast.add({
         title: 'Clipboard Loaded',
-        description: `Imported ${headers.value.length} columns & ${rows.value.length} rows`,
+        description: `Imported ${draft.value.headers.length} columns & ${draft.value.rows.length} rows`,
         color: 'success'
       })
     }
@@ -135,14 +143,14 @@ function handleFileUpload(e: Event) {
 // --- Column Manipulations ---
 function startEditHeader(idx: number) {
   editingHeaderIndex.value = idx
-  editingHeaderValue.value = headers.value[idx] ?? ''
+  editingHeaderValue.value = draft.value.headers[idx] ?? ''
 }
 
 function saveHeader() {
   if (editingHeaderIndex.value !== null) {
     const clean = editingHeaderValue.value.trim()
     if (clean) {
-      headers.value[editingHeaderIndex.value] = clean
+      draft.value.headers[editingHeaderIndex.value] = clean
     }
     editingHeaderIndex.value = null
   }
@@ -154,22 +162,22 @@ function cancelEditHeader() {
 
 function moveColumn(idx: number, direction: 'left' | 'right') {
   const targetIdx = direction === 'left' ? idx - 1 : idx + 1
-  if (targetIdx < 0 || targetIdx >= headers.value.length) return
+  if (targetIdx < 0 || targetIdx >= draft.value.headers.length) return
   swapColumns(idx, targetIdx)
 }
 
 function swapColumns(idxA: number, idxB: number) {
-  if (idxA === idxB || idxA < 0 || idxB < 0 || idxA >= headers.value.length || idxB >= headers.value.length) {
+  if (idxA === idxB || idxA < 0 || idxB < 0 || idxA >= draft.value.headers.length || idxB >= draft.value.headers.length) {
     return
   }
 
   // Swap header names
-  const tempHeader = headers.value[idxA]!
-  headers.value[idxA] = headers.value[idxB]!
-  headers.value[idxB] = tempHeader
+  const tempHeader = draft.value.headers[idxA]!
+  draft.value.headers[idxA] = draft.value.headers[idxB]!
+  draft.value.headers[idxB] = tempHeader
 
   // Swap cell values for every row
-  rows.value = rows.value.map((row) => {
+  draft.value.rows = draft.value.rows.map((row) => {
     const newRow = [...row]
     const tempCell = newRow[idxA] ?? ''
     newRow[idxA] = newRow[idxB] ?? ''
@@ -178,15 +186,15 @@ function swapColumns(idxA: number, idxB: number) {
   })
 
   // Update sort column pointer if it was affected
-  if (sortColumn.value === idxA) {
-    sortColumn.value = idxB
-  } else if (sortColumn.value === idxB) {
-    sortColumn.value = idxA
+  if (draft.value.sortColumn === idxA) {
+    draft.value.sortColumn = idxB
+  } else if (draft.value.sortColumn === idxB) {
+    draft.value.sortColumn = idxA
   }
 
   toast.add({
     title: 'Columns Swapped',
-    description: `Swapped "${headers.value[idxB]}" and "${headers.value[idxA]}"`,
+    description: `Swapped "${draft.value.headers[idxB]}" and "${draft.value.headers[idxA]}"`,
     color: 'success',
     icon: 'i-lucide-arrow-left-right'
   })
@@ -198,7 +206,7 @@ function executeModalSwap() {
 }
 
 function deleteColumn(colIdx: number) {
-  if (headers.value.length <= 1) {
+  if (draft.value.headers.length <= 1) {
     toast.add({
       title: 'Cannot delete column',
       description: 'The table must have at least one column',
@@ -207,18 +215,18 @@ function deleteColumn(colIdx: number) {
     return
   }
 
-  const colName = headers.value[colIdx]
-  headers.value.splice(colIdx, 1)
-  rows.value = rows.value.map((row) => {
+  const colName = draft.value.headers[colIdx]
+  draft.value.headers.splice(colIdx, 1)
+  draft.value.rows = draft.value.rows.map((row) => {
     const newRow = [...row]
     newRow.splice(colIdx, 1)
     return newRow
   })
 
-  if (sortColumn.value === colIdx) {
-    sortColumn.value = null
-  } else if (sortColumn.value !== null && sortColumn.value > colIdx) {
-    sortColumn.value -= 1
+  if (draft.value.sortColumn === colIdx) {
+    draft.value.sortColumn = null
+  } else if (draft.value.sortColumn !== null && draft.value.sortColumn > colIdx) {
+    draft.value.sortColumn -= 1
   }
 
   toast.add({
@@ -229,9 +237,9 @@ function deleteColumn(colIdx: number) {
 }
 
 function addColumn() {
-  const newName = `column_${headers.value.length + 1}`
-  headers.value.push(newName)
-  rows.value = rows.value.map(row => [...row, ''])
+  const newName = `column_${draft.value.headers.length + 1}`
+  draft.value.headers.push(newName)
+  draft.value.rows = draft.value.rows.map(row => [...row, ''])
   toast.add({
     title: 'Column Added',
     description: `Created new column "${newName}"`,
@@ -241,39 +249,39 @@ function addColumn() {
 
 // --- Row Manipulations ---
 function addRow() {
-  rows.value.push(Array(headers.value.length).fill(''))
+  draft.value.rows.push(Array(draft.value.headers.length).fill(''))
   // Jump to last page
-  currentPage.value = Math.ceil(rows.value.length / pageSize.value)
+  draft.value.currentPage = Math.ceil(draft.value.rows.length / draft.value.pageSize)
 }
 
 function deleteRow(rowIdx: number) {
-  rows.value.splice(rowIdx, 1)
+  draft.value.rows.splice(rowIdx, 1)
 }
 
 function updateCell(rowIdx: number, colIdx: number, value: string) {
-  if (rows.value[rowIdx]) {
-    rows.value[rowIdx][colIdx] = value
+  if (draft.value.rows[rowIdx]) {
+    draft.value.rows[rowIdx][colIdx] = value
   }
 }
 
 // --- Sorting & Filtering ---
 function toggleSort(colIdx: number) {
-  if (sortColumn.value === colIdx) {
-    if (sortDirection.value === 'asc') {
-      sortDirection.value = 'desc'
+  if (draft.value.sortColumn === colIdx) {
+    if (draft.value.sortDirection === 'asc') {
+      draft.value.sortDirection = 'desc'
     } else {
-      sortColumn.value = null
-      sortDirection.value = 'asc'
+      draft.value.sortColumn = null
+      draft.value.sortDirection = 'asc'
     }
   } else {
-    sortColumn.value = colIdx
-    sortDirection.value = 'asc'
+    draft.value.sortColumn = colIdx
+    draft.value.sortDirection = 'asc'
   }
 }
 
 const filteredRows = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  let result = [...rows.value]
+  const query = draft.value.searchQuery.trim().toLowerCase()
+  let result = [...draft.value.rows]
 
   // Search filter
   if (query) {
@@ -281,9 +289,9 @@ const filteredRows = computed(() => {
   }
 
   // Sorting
-  if (sortColumn.value !== null) {
-    const colIdx = sortColumn.value
-    const dir = sortDirection.value === 'asc' ? 1 : -1
+  if (draft.value.sortColumn !== null) {
+    const colIdx = draft.value.sortColumn
+    const dir = draft.value.sortDirection === 'asc' ? 1 : -1
 
     result.sort((a, b) => {
       const valA = a[colIdx] ?? ''
@@ -303,17 +311,17 @@ const filteredRows = computed(() => {
 })
 
 const totalPages = computed(() => {
-  return Math.max(1, Math.ceil(filteredRows.value.length / pageSize.value))
+  return Math.max(1, Math.ceil(filteredRows.value.length / draft.value.pageSize))
 })
 
 const paginatedRows = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return filteredRows.value.slice(start, start + pageSize.value)
+  const start = (draft.value.currentPage - 1) * draft.value.pageSize
+  return filteredRows.value.slice(start, start + draft.value.pageSize)
 })
 
 // Serialized output for copying / exporting
 const currentCsv = computed(() => {
-  return serializeCsv(headers.value, rows.value, delimiter.value)
+  return serializeCsv(draft.value.headers, draft.value.rows, draft.value.delimiter)
 })
 
 const payloadSize = computed(() => {
@@ -327,29 +335,29 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
 
   switch (type) {
     case 'csv':
-      content = serializeCsv(headers.value, rows.value, ',')
+      content = serializeCsv(draft.value.headers, draft.value.rows, ',')
       mimeType = 'text/csv'
       break
     case 'tsv':
-      content = serializeCsv(headers.value, rows.value, '\t')
+      content = serializeCsv(draft.value.headers, draft.value.rows, '\t')
       mimeType = 'text/tab-separated-values'
       break
     case 'json':
-      content = tableToJson(headers.value, rows.value)
+      content = tableToJson(draft.value.headers, draft.value.rows)
       mimeType = 'application/json'
       break
     case 'jsonl':
-      content = tableToJsonl(headers.value, rows.value)
+      content = tableToJsonl(draft.value.headers, draft.value.rows)
       mimeType = 'application/x-ndjson'
       break
     case 'md':
-      content = tableToMarkdown(headers.value, rows.value)
+      content = tableToMarkdown(draft.value.headers, draft.value.rows)
       mimeType = 'text/markdown'
       break
     case 'sql':
       content = tableToSql({
-        headers: headers.value,
-        rows: rows.value,
+        headers: draft.value.headers,
+        rows: draft.value.rows,
         dialect: 'mysql',
         tableName: 'imported_table'
       })
@@ -367,7 +375,7 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
 
   toast.add({
     title: 'Downloaded File',
-    description: `Exported ${rows.value.length} rows as ${filename}`,
+    description: `Exported ${draft.value.rows.length} rows as ${filename}`,
     color: 'success'
   })
 }
@@ -382,7 +390,7 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
       category="Table Tools"
       badge="Interactive"
       :copy-text="currentCsv"
-      :disable-copy="headers.length === 0"
+      :disable-copy="draft.headers.length === 0"
       @load-sample="loadSample"
       @clear="clearAll"
     >
@@ -429,7 +437,7 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
 
             <!-- Swap Column Modal Trigger -->
             <UButton
-              v-if="headers.length >= 2"
+              v-if="draft.headers.length >= 2"
               icon="i-lucide-arrow-left-right"
               label="Swap Columns"
               size="xs"
@@ -451,7 +459,7 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
 
           <!-- Export Dropdown / Buttons -->
           <div
-            v-if="headers.length > 0"
+            v-if="draft.headers.length > 0"
             class="flex items-center gap-1.5"
           >
             <span class="text-xs text-muted">Export:</span>
@@ -531,7 +539,7 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
               class="w-full px-3 py-2 text-xs rounded-lg border border-default bg-neutral-100 dark:bg-neutral-800 text-highlighted focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option
-                v-for="(h, i) in headers"
+                v-for="(h, i) in draft.headers"
                 :key="i"
                 :value="i"
               >
@@ -547,7 +555,7 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
               class="w-full px-3 py-2 text-xs rounded-lg border border-default bg-neutral-100 dark:bg-neutral-800 text-highlighted focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option
-                v-for="(h, i) in headers"
+                v-for="(h, i) in draft.headers"
                 :key="i"
                 :value="i"
               >
@@ -579,7 +587,7 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
 
     <!-- Raw Text Input Area (Shown when toggled or empty) -->
     <div
-      v-if="showRawInput || headers.length === 0"
+      v-if="showRawInput || draft.headers.length === 0"
       class="p-5 rounded-xl border border-default bg-neutral-100/40 dark:bg-neutral-900/40 space-y-4"
     >
       <div class="flex items-center justify-between">
@@ -608,14 +616,14 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
             size="xs"
             color="primary"
             icon="i-lucide-table"
-            :disabled="!rawInput.trim()"
-            @click="loadData(rawInput)"
+            :disabled="!draft.rawInput.trim()"
+            @click="loadData(draft.rawInput)"
           />
         </div>
       </div>
 
       <textarea
-        v-model="rawInput"
+        v-model="draft.rawInput"
         rows="8"
         placeholder="id,name,role,salary&#10;1,Alice,Engineer,95000&#10;2,Bob,Designer,85000..."
         class="w-full p-3 font-mono text-xs rounded-xl border border-default bg-neutral-100/60 dark:bg-neutral-950/60 text-highlighted focus:outline-none focus:ring-2 focus:ring-primary/40 resize-y"
@@ -625,7 +633,7 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
 
     <!-- Interactive Table Grid (When data is loaded) -->
     <div
-      v-if="headers.length > 0 && !showRawInput"
+      v-if="draft.headers.length > 0 && !showRawInput"
       class="space-y-4"
     >
       <!-- Stats & Controls Bar -->
@@ -633,11 +641,11 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
         <div class="flex flex-wrap items-center gap-4">
           <div>
             <span class="text-muted block text-[11px]">Columns</span>
-            <strong class="font-mono text-highlighted">{{ headers.length }}</strong>
+            <strong class="font-mono text-highlighted">{{ draft.headers.length }}</strong>
           </div>
           <div>
             <span class="text-muted block text-[11px]">Total Rows</span>
-            <strong class="font-mono text-highlighted">{{ rows.length }}</strong>
+            <strong class="font-mono text-highlighted">{{ draft.rows.length }}</strong>
           </div>
           <div>
             <span class="text-muted block text-[11px]">Filtered</span>
@@ -653,7 +661,7 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
         <div class="flex items-center gap-3">
           <div class="relative w-48 sm:w-64">
             <input
-              v-model="searchQuery"
+              v-model="draft.searchQuery"
               type="text"
               placeholder="Search table cells..."
               class="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-default bg-neutral-100/60 dark:bg-neutral-950/60 text-highlighted focus:outline-none focus:ring-1 focus:ring-primary"
@@ -698,7 +706,7 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
 
                 <!-- Dynamic Data Column Headers -->
                 <th
-                  v-for="(header, colIdx) in headers"
+                  v-for="(header, colIdx) in draft.headers"
                   :key="colIdx"
                   class="px-3 py-2 font-semibold text-highlighted border-r border-default last:border-r-0 min-w-[160px] group"
                 >
@@ -764,12 +772,12 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
                       <button
                         type="button"
                         class="p-1 rounded hover:bg-neutral-300 dark:hover:bg-neutral-800 text-muted hover:text-highlighted"
-                        :class="sortColumn === colIdx ? 'text-primary font-bold' : ''"
+                        :class="draft.sortColumn === colIdx ? 'text-primary font-bold' : ''"
                         title="Sort column"
                         @click="toggleSort(colIdx)"
                       >
                         <UIcon
-                          :name="sortColumn === colIdx && sortDirection === 'desc' ? 'i-lucide-arrow-down' : 'i-lucide-arrow-up-down'"
+                          :name="draft.sortColumn === colIdx && draft.sortDirection === 'desc' ? 'i-lucide-arrow-down' : 'i-lucide-arrow-up-down'"
                           class="size-3"
                         />
                       </button>
@@ -790,7 +798,7 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
 
                       <!-- Move Right -->
                       <button
-                        v-if="colIdx < headers.length - 1"
+                        v-if="colIdx < draft.headers.length - 1"
                         type="button"
                         class="p-1 rounded hover:bg-neutral-300 dark:hover:bg-neutral-800 text-muted hover:text-highlighted"
                         title="Move column right"
@@ -832,12 +840,12 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
               >
                 <!-- Row Number -->
                 <td class="px-3 py-1.5 text-center font-mono text-[11px] text-muted border-r border-default select-none">
-                  {{ (currentPage - 1) * pageSize + rIdx + 1 }}
+                  {{ (draft.currentPage - 1) * draft.pageSize + rIdx + 1 }}
                 </td>
 
                 <!-- Editable Cells -->
                 <td
-                  v-for="(_, cIdx) in headers"
+                  v-for="(_, cIdx) in draft.headers"
                   :key="cIdx"
                   class="p-1 border-r border-default last:border-r-0 min-w-[160px]"
                 >
@@ -845,7 +853,7 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
                     :value="row[cIdx] ?? ''"
                     type="text"
                     class="w-full px-2 py-1 bg-transparent rounded font-mono text-xs text-highlighted focus:bg-neutral-100 dark:focus:bg-neutral-950 focus:outline-none focus:ring-1 focus:ring-primary/60 border border-transparent hover:border-default"
-                    @input="(e) => updateCell((currentPage - 1) * pageSize + rIdx, cIdx, (e.target as HTMLInputElement).value)"
+                    @input="(e) => updateCell((draft.currentPage - 1) * draft.pageSize + rIdx, cIdx, (e.target as HTMLInputElement).value)"
                   >
                 </td>
 
@@ -855,7 +863,7 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
                     type="button"
                     class="opacity-0 group-hover:opacity-100 p-1 text-muted hover:text-rose-500 transition-opacity rounded"
                     title="Delete row"
-                    @click="deleteRow((currentPage - 1) * pageSize + rIdx)"
+                    @click="deleteRow((draft.currentPage - 1) * draft.pageSize + rIdx)"
                   >
                     <UIcon
                       name="i-lucide-trash-2"
@@ -873,9 +881,9 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
           <div class="flex items-center gap-2">
             <span>Rows per page:</span>
             <select
-              v-model.number="pageSize"
+              v-model.number="draft.pageSize"
               class="px-2 py-1 text-xs rounded border border-default bg-neutral-100 dark:bg-neutral-800 text-highlighted focus:outline-none"
-              @change="currentPage = 1"
+              @change="draft.currentPage = 1"
             >
               <option :value="10">
                 10
@@ -894,8 +902,8 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
               </option>
             </select>
             <span>
-              Showing {{ (currentPage - 1) * pageSize + 1 }} -
-              {{ Math.min(currentPage * pageSize, filteredRows.length) }}
+              Showing {{ (draft.currentPage - 1) * draft.pageSize + 1 }} -
+              {{ Math.min(draft.currentPage * draft.pageSize, filteredRows.length) }}
               of {{ filteredRows.length }} rows
             </span>
           </div>
@@ -906,35 +914,35 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
               size="xs"
               color="neutral"
               variant="outline"
-              :disabled="currentPage <= 1"
-              @click="currentPage = 1"
+              :disabled="draft.currentPage <= 1"
+              @click="draft.currentPage = 1"
             />
             <UButton
               icon="i-lucide-chevron-left"
               size="xs"
               color="neutral"
               variant="outline"
-              :disabled="currentPage <= 1"
-              @click="currentPage -= 1"
+              :disabled="draft.currentPage <= 1"
+              @click="draft.currentPage -= 1"
             />
             <span class="font-mono text-xs">
-              Page {{ currentPage }} of {{ totalPages }}
+              Page {{ draft.currentPage }} of {{ totalPages }}
             </span>
             <UButton
               icon="i-lucide-chevron-right"
               size="xs"
               color="neutral"
               variant="outline"
-              :disabled="currentPage >= totalPages"
-              @click="currentPage += 1"
+              :disabled="draft.currentPage >= totalPages"
+              @click="draft.currentPage += 1"
             />
             <UButton
               icon="i-lucide-chevrons-right"
               size="xs"
               color="neutral"
               variant="outline"
-              :disabled="currentPage >= totalPages"
-              @click="currentPage = totalPages"
+              :disabled="draft.currentPage >= totalPages"
+              @click="draft.currentPage = totalPages"
             />
           </div>
         </div>

@@ -3,7 +3,6 @@ import { useClipboardAction } from '~/composables/useClipboardAction'
 import { useToolDraft } from '~/composables/useToolDraft'
 import type { SchemaField, SchemaDraft } from '~/types/schema'
 import {
-  generateFieldId,
   inferSchemaFromData,
   buildRootJsonSchema
 } from '~/utils/schema'
@@ -20,70 +19,13 @@ interface SchemaDraftState {
   rootField: SchemaField
 }
 
-function getDefaultRootField(): SchemaField {
+function getEmptyRootField(): SchemaField {
   return {
     id: 'root',
     name: 'root',
     type: 'object',
     required: true,
-    properties: [
-      {
-        id: generateFieldId(),
-        name: 'id',
-        type: 'integer',
-        required: true,
-        minimum: 1
-      },
-      {
-        id: generateFieldId(),
-        name: 'username',
-        type: 'string',
-        required: true,
-        minLength: 3,
-        maxLength: 30
-      },
-      {
-        id: generateFieldId(),
-        name: 'email',
-        type: 'string',
-        required: true,
-        format: 'email'
-      },
-      {
-        id: generateFieldId(),
-        name: 'isActive',
-        type: 'boolean',
-        required: false
-      },
-      {
-        id: generateFieldId(),
-        name: 'roles',
-        type: 'array',
-        required: true,
-        itemType: 'string'
-      },
-      {
-        id: generateFieldId(),
-        name: 'profile',
-        type: 'object',
-        required: false,
-        properties: [
-          {
-            id: generateFieldId(),
-            name: 'displayName',
-            type: 'string',
-            required: false
-          },
-          {
-            id: generateFieldId(),
-            name: 'website',
-            type: 'string',
-            required: false,
-            format: 'uri'
-          }
-        ]
-      }
-    ]
+    properties: []
   }
 }
 
@@ -95,7 +37,7 @@ const { state: draft, clearDraft } = useToolDraft<SchemaDraftState>('json-schema
   schemaDraft: 'draft-07',
   strictAdditionalProperties: false,
   sampleJsonInput: '',
-  rootField: getDefaultRootField()
+  rootField: getEmptyRootField()
 }))
 
 const inferErrorMessage = ref<string | null>(null)

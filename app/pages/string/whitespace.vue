@@ -1,18 +1,30 @@
 <script setup lang="ts">
 import { useClipboardAction } from '~/composables/useClipboardAction'
+import { useToolDraft } from '~/composables/useToolDraft'
 
-// Page-isolated state
-const input = ref('')
+interface WhitespaceDraft {
+  input: string
+  stripAllWhitespace: boolean
+  collapseSpaces: boolean
+  trimLines: boolean
+  removeEmptyLines: boolean
+  replaceTabsWithSpaces: boolean
+  tabSize: number
+  normalizeLineBreaks: 'lf' | 'crlf' | 'none'
+}
+
+const { state: draft, clearDraft } = useToolDraft<WhitespaceDraft>('string-whitespace', () => ({
+  input: '',
+  stripAllWhitespace: false,
+  collapseSpaces: true,
+  trimLines: true,
+  removeEmptyLines: true,
+  replaceTabsWithSpaces: true,
+  tabSize: 2,
+  normalizeLineBreaks: 'lf'
+}))
+
 const output = ref('')
-
-// Configuration toggles
-const stripAllWhitespace = ref(false)
-const collapseSpaces = ref(true)
-const trimLines = ref(true)
-const removeEmptyLines = ref(true)
-const replaceTabsWithSpaces = ref(true)
-const tabSize = ref(2)
-const normalizeLineBreaks = ref<'lf' | 'crlf' | 'none'>('lf')
 
 const { copied, copyToClipboard } = useClipboardAction()
 
@@ -29,24 +41,24 @@ function calculateMetrics( items ) {
 `
 
 function loadSample() {
-  input.value = sampleText
+  draft.value.input = sampleText
   processWhitespace()
 }
 
 function clearAll() {
-  input.value = ''
+  clearDraft()
   output.value = ''
 }
 
 function processWhitespace() {
-  const text = input.value
+  const text = draft.value.input
   if (!text) {
     output.value = ''
     return
   }
 
   // Extreme mode: Strip all whitespace completely
-  if (stripAllWhitespace.value) {
+  if (draft.value.stripAllWhitespace) {
     output.value = text.replace(/\s+/g, '')
     return
   }
@@ -54,8 +66,8 @@ function processWhitespace() {
   let result = text
 
   // 1. Tab handling
-  if (replaceTabsWithSpaces.value) {
-    const spaces = ' '.repeat(tabSize.value)
+  if (draft.value.replaceTabsWithSpaces) {
+    const spaces = ' '.repeat(draft.value.tabSize)
     result = result.replace(/\t/g, spaces)
   }
 
@@ -65,17 +77,17 @@ function processWhitespace() {
 
   for (let line of lines) {
     // Trim line edges
-    if (trimLines.value) {
+    if (draft.value.trimLines) {
       line = line.trim()
     }
 
     // Collapse multiple spaces within the line
-    if (collapseSpaces.value) {
+    if (draft.value.collapseSpaces) {
       line = line.replace(/[^\S\r\n]+/g, ' ')
     }
 
     // Empty lines check
-    if (removeEmptyLines.value && line.length === 0) {
+    if (draft.value.removeEmptyLines && line.length === 0) {
       continue
     }
 
@@ -83,30 +95,31 @@ function processWhitespace() {
   }
 
   // 3. Line break normalization
-  const eol = normalizeLineBreaks.value === 'crlf' ? '\r\n' : '\n'
+  const eol = draft.value.normalizeLineBreaks === 'crlf' ? '\r\n' : '\n'
   result = processedLines.join(eol)
 
   output.value = result
 }
 
 watch(
-  [
-    input,
-    stripAllWhitespace,
-    collapseSpaces,
-    trimLines,
-    removeEmptyLines,
-    replaceTabsWithSpaces,
-    tabSize,
-    normalizeLineBreaks
+  () => [
+    draft.value.input,
+    draft.value.stripAllWhitespace,
+    draft.value.collapseSpaces,
+    draft.value.trimLines,
+    draft.value.removeEmptyLines,
+    draft.value.replaceTabsWithSpaces,
+    draft.value.tabSize,
+    draft.value.normalizeLineBreaks
   ],
   () => {
     processWhitespace()
-  }
+  },
+  { immediate: true }
 )
 
 const stats = computed(() => {
-  const inText = input.value
+  const inText = draft.value.input
   const outText = output.value
 
   const countWords = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
@@ -147,9 +160,9 @@ const stats = computed(() => {
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
           <label class="flex items-center gap-2 text-muted hover:text-highlighted cursor-pointer select-none">
             <input
-              v-model="collapseSpaces"
+              v-model="draft.collapseSpaces"
               type="checkbox"
-              :disabled="stripAllWhitespace"
+              :disabled="draft.stripAllWhitespace"
               class="rounded border-default text-primary focus:ring-primary/20"
             >
             <span>Collapse multiple spaces</span>
@@ -157,9 +170,9 @@ const stats = computed(() => {
 
           <label class="flex items-center gap-2 text-muted hover:text-highlighted cursor-pointer select-none">
             <input
-              v-model="trimLines"
+              v-model="draft.trimLines"
               type="checkbox"
-              :disabled="stripAllWhitespace"
+              :disabled="draft.stripAllWhitespace"
               class="rounded border-default text-primary focus:ring-primary/20"
             >
             <span>Trim line ends (leading/trailing)</span>
@@ -167,9 +180,9 @@ const stats = computed(() => {
 
           <label class="flex items-center gap-2 text-muted hover:text-highlighted cursor-pointer select-none">
             <input
-              v-model="removeEmptyLines"
+              v-model="draft.removeEmptyLines"
               type="checkbox"
-              :disabled="stripAllWhitespace"
+              :disabled="draft.stripAllWhitespace"
               class="rounded border-default text-primary focus:ring-primary/20"
             >
             <span>Remove empty/blank lines</span>
@@ -177,17 +190,17 @@ const stats = computed(() => {
 
           <label class="flex items-center gap-2 text-muted hover:text-highlighted cursor-pointer select-none">
             <input
-              v-model="replaceTabsWithSpaces"
+              v-model="draft.replaceTabsWithSpaces"
               type="checkbox"
-              :disabled="stripAllWhitespace"
+              :disabled="draft.stripAllWhitespace"
               class="rounded border-default text-primary focus:ring-primary/20"
             >
-            <span>Replace tabs with {{ tabSize }} spaces</span>
+            <span>Replace tabs with {{ draft.tabSize }} spaces</span>
           </label>
 
           <label class="flex items-center gap-2 text-rose-500 dark:text-rose-400 font-medium cursor-pointer select-none">
             <input
-              v-model="stripAllWhitespace"
+              v-model="draft.stripAllWhitespace"
               type="checkbox"
               class="rounded border-default text-rose-600 focus:ring-rose-400/20"
             >
@@ -243,7 +256,7 @@ const stats = computed(() => {
         </div>
         <div class="p-2 flex-1">
           <textarea
-            v-model="input"
+            v-model="draft.input"
             placeholder="Paste text with messy spaces, tabs, or blank lines..."
             class="w-full h-96 p-3 bg-transparent font-mono text-xs focus:outline-none resize-y text-highlighted"
             spellcheck="false"
