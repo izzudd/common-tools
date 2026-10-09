@@ -121,6 +121,23 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
         keywords: ['csv', 'sql', 'mysql', 'postgres', 'sqlite', 'mssql', 'jsonl', 'tsv', 'converter', 'export', 'insert']
       }
     ]
+  },
+  {
+    id: 'web',
+    name: 'Web & HTML Tools',
+    description: 'Preview, test, and render HTML & CSS snippets, email templates, and web components',
+    icon: 'i-lucide-globe',
+    tools: [
+      {
+        id: 'html-previewer',
+        name: 'HTML & Email Previewer',
+        description: 'Interactive HTML & CSS sandbox with sandboxed iframe, responsive viewports, and email client simulator',
+        path: '/web/html-previewer',
+        icon: 'i-lucide-mail',
+        badge: 'Playground',
+        keywords: ['html', 'css', 'preview', 'email', 'playground', 'iframe', 'sandbox', 'render', 'newsletter', 'template']
+      }
+    ]
   }
 ]
 

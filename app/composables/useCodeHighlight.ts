@@ -14,7 +14,9 @@ export function getHighlighter(): Promise<HighlighterCore> {
         import('shiki/langs/typescript.mjs'),
         import('shiki/langs/python.mjs'),
         import('shiki/langs/go.mjs'),
-        import('shiki/langs/json.mjs')
+        import('shiki/langs/json.mjs'),
+        import('shiki/langs/html.mjs'),
+        import('shiki/langs/css.mjs')
       ],
       engine: createJavaScriptRegexEngine()
     })
