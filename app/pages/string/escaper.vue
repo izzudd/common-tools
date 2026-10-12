@@ -180,6 +180,7 @@ watch(
 <template>
   <div class="space-y-6">
     <ToolHeader
+      tool-id="string-escaper"
       title="String Escaper & Unescaper"
       description="Escape and unescape HTML special characters, URLs, Regex meta-patterns, C/Unix slashes, and UTF-8 Base64 strings."
       icon="i-lucide-binary"

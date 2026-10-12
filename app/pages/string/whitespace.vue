@@ -146,6 +146,7 @@ const stats = computed(() => {
 <template>
   <div class="space-y-6">
     <ToolHeader
+      tool-id="string-whitespace"
       title="Whitespace & Indentation Remover"
       description="Clean up excess whitespace, strip tabs, collapse repetitive spaces, trim margins, and normalize line breaks."
       icon="i-lucide-scissors"

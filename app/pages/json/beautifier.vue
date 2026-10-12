@@ -143,6 +143,7 @@ const stats = computed(() => {
       description="Format, prettify, sort keys, validate, or compress JSON data with zero latency."
       icon="i-lucide-indent-decrease"
       category="JSON Tools"
+      tool-id="json-beautifier"
       :copy-text="outputJson"
       :disable-copy="!outputJson"
       @load-sample="loadSample"

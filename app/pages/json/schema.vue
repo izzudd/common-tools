@@ -192,6 +192,7 @@ const stats = computed(() => {
 <template>
   <div class="space-y-6">
     <ToolHeader
+      tool-id="json-schema"
       title="JSON Schema Builder & Generator"
       description="Create, infer, and customize JSON Schema (Draft 7 / 2020-12) interactively."
       icon="i-lucide-file-json"

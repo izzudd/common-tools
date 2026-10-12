@@ -147,6 +147,7 @@ const outputPlaceholder = computed(() => {
 <template>
   <div class="space-y-6">
     <ToolHeader
+      tool-id="json-stringify"
       title="JSON Stringify & JSONify"
       description="Escape JSON objects into quoted string literals for code/APIs, or unescape stringified logs and payloads back to clean JSON."
       icon="i-lucide-quote"

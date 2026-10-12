@@ -330,6 +330,7 @@ const targetLangShiki = computed<string>(() => {
 <template>
   <div class="space-y-6">
     <ToolHeader
+      tool-id="json-type-generator"
       title="JSON to Type & Model"
       description="Convert sample JSON payloads or JSON Schema definitions into type-safe models for Zod, Pydantic, Python Dataclass / TypedDict, Go Structs, and TypeScript"
       category="JSON Tools"

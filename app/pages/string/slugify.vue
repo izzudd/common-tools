@@ -318,6 +318,7 @@ const stats = computed(() => {
 <template>
   <div class="space-y-6">
     <ToolHeader
+      tool-id="string-slugify"
       title="Slugify & URL Normalizer"
       description="Convert titles and strings into clean, SEO-friendly, and URL-safe slugs with customizable separators, transliteration, and casing."
       icon="i-lucide-link"

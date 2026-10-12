@@ -94,6 +94,7 @@ const formattedJson = computed(() => {
 <template>
   <div class="space-y-6">
     <ToolHeader
+      tool-id="json-visualizer"
       title="JSON Visualizer & Tree Inspector"
       description="Interactive node hierarchy explorer for complex JSON payloads with collapsible keys, search filters, and path navigation."
       icon="i-lucide-folder-tree"

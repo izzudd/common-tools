@@ -1,11 +1,31 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { TOOL_CATEGORIES, ALL_TOOLS } from '~/config/tools'
+import { usePinnedTools } from '~/composables/usePinnedTools'
 
 const route = useRoute()
 const sidebarOpen = ref(true)
+const { pinnedToolIds, isPinned, togglePin } = usePinnedTools()
+const toast = useToast()
 
-// Build navigation menu items from modular TOOL_CATEGORIES
+const currentTool = computed(() => {
+  return ALL_TOOLS.find(t => t.path === route.path)
+})
+
+function handleToggleCurrentToolPin() {
+  if (!currentTool.value) return
+  const pinned = togglePin(currentTool.value.id)
+  toast.add({
+    title: pinned ? 'Tool Pinned' : 'Tool Unpinned',
+    description: pinned
+      ? `"${currentTool.value.name}" is now pinned to the top of your sidebar.`
+      : `"${currentTool.value.name}" removed from pinned tools.`,
+    color: pinned ? 'primary' : 'neutral',
+    icon: pinned ? 'i-lucide-pin' : 'i-lucide-pin-off'
+  })
+}
+
+// Build navigation menu items with Pinned Tools at the top
 const navItems = computed<NavigationMenuItem[]>(() => {
   const homeItem: NavigationMenuItem = {
     label: 'Overview & Hub',
@@ -13,6 +33,26 @@ const navItems = computed<NavigationMenuItem[]>(() => {
     to: '/',
     active: route.path === '/'
   }
+
+  // Find all pinned tools from catalog preserving user pin order
+  const pinnedList = pinnedToolIds.value
+    .map(id => ALL_TOOLS.find(tool => tool.id === id))
+    .filter((tool): tool is NonNullable<typeof tool> => Boolean(tool))
+
+  const pinnedCategory: NavigationMenuItem | null = pinnedList.length > 0
+    ? {
+        label: 'Pinned Tools',
+        icon: 'i-lucide-pin',
+        badge: pinnedList.length.toString(),
+        defaultOpen: true,
+        children: pinnedList.map(tool => ({
+          label: tool.name,
+          icon: tool.icon,
+          to: tool.path,
+          active: route.path === tool.path
+        }))
+      }
+    : null
 
   const categoryItems: NavigationMenuItem[] = TOOL_CATEGORIES.map(category => ({
     label: category.name,
@@ -26,11 +66,9 @@ const navItems = computed<NavigationMenuItem[]>(() => {
     }))
   }))
 
-  return [homeItem, ...categoryItems]
-})
-
-const currentTool = computed(() => {
-  return ALL_TOOLS.find(t => t.path === route.path)
+  return pinnedCategory
+    ? [homeItem, pinnedCategory, ...categoryItems]
+    : [homeItem, ...categoryItems]
 })
 </script>
 
@@ -154,6 +192,15 @@ const currentTool = computed(() => {
               <span class="font-semibold text-highlighted">
                 {{ currentTool.name }}
               </span>
+              <UButton
+                :icon="isPinned(currentTool.id) ? 'i-lucide-pin-off' : 'i-lucide-pin'"
+                :color="isPinned(currentTool.id) ? 'primary' : 'neutral'"
+                :variant="isPinned(currentTool.id) ? 'subtle' : 'ghost'"
+                size="xs"
+                :title="isPinned(currentTool.id) ? 'Unpin tool from sidebar' : 'Pin tool to top of sidebar'"
+                :aria-label="isPinned(currentTool.id) ? 'Unpin tool' : 'Pin tool'"
+                @click="handleToggleCurrentToolPin"
+              />
             </template>
           </div>
         </div>

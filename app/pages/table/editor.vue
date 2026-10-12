@@ -384,6 +384,7 @@ function downloadExport(type: 'csv' | 'tsv' | 'json' | 'jsonl' | 'md' | 'sql') {
 <template>
   <div class="space-y-6">
     <ToolHeader
+      tool-id="table-editor"
       title="Table & CSV Editor"
       description="Inspect, swap columns, rename headers, review clipboard or CSV data, and export in multiple formats."
       icon="i-lucide-table-properties"

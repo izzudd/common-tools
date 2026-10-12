@@ -334,6 +334,7 @@ const stats = computed(() => {
       icon="i-lucide-globe"
       category="Web Tools"
       badge="Live Preview"
+      tool-id="html-previewer"
       :copy-text="compiledDocument"
       :disable-copy="!draft.html.trim()"
       @load-sample="loadSample"

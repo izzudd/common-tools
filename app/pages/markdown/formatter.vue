@@ -188,6 +188,7 @@ const stats = computed(() => {
       icon="i-lucide-table-properties"
       category="Markdown Tools"
       badge="Utilities"
+      tool-id="markdown-formatter"
       :copy-text="output"
       :disable-copy="!output"
       @load-sample="loadSample"

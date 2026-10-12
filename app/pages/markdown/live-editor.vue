@@ -250,6 +250,7 @@ const stats = computed(() => {
       icon="i-lucide-eye"
       category="Markdown Tools"
       badge="Live Preview"
+      tool-id="markdown-live-editor"
       :copy-text="draft.markdown"
       :disable-copy="!draft.markdown"
       @load-sample="loadSample"

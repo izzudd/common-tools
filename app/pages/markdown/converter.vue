@@ -284,6 +284,7 @@ const stats = computed(() => {
       icon="i-lucide-file-text"
       category="Markdown Tools"
       badge="Multi-Way"
+      tool-id="markdown-converter"
       :copy-text="output"
       :disable-copy="!output"
       @load-sample="loadSample"

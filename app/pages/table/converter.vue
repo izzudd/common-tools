@@ -247,6 +247,7 @@ const stats = computed(() => {
 <template>
   <div class="space-y-6">
     <ToolHeader
+      tool-id="table-converter"
       title="CSV to SQL & Multi-Format Converter"
       description="Convert CSV and tabular data into SQL (MySQL, PostgreSQL, SQLite, MSSQL), JSONL, TSV, JSON, Markdown, and HTML."
       icon="i-lucide-database"

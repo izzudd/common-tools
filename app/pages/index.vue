@@ -1,15 +1,35 @@
 <script setup lang="ts">
 import { TOOL_CATEGORIES, ALL_TOOLS } from '~/config/tools'
+import { usePinnedTools } from '~/composables/usePinnedTools'
 
 const searchQuery = ref('')
 const selectedCategory = ref<string>('all')
+const { pinnedToolIds, isPinned, togglePin } = usePinnedTools()
+const toast = useToast()
+
+function handleTogglePin(e: Event, tool: typeof ALL_TOOLS[number]) {
+  e.preventDefault()
+  e.stopPropagation()
+  const pinned = togglePin(tool.id)
+  toast.add({
+    title: pinned ? 'Tool Pinned' : 'Tool Unpinned',
+    description: pinned
+      ? `"${tool.name}" is now pinned to the top of your sidebar.`
+      : `"${tool.name}" removed from pinned tools.`,
+    color: pinned ? 'primary' : 'neutral',
+    icon: pinned ? 'i-lucide-pin' : 'i-lucide-pin-off'
+  })
+}
 
 const filteredTools = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
   return ALL_TOOLS.filter((tool) => {
-    const matchesCategory
-      = selectedCategory.value === 'all'
-        || TOOL_CATEGORIES.find(c => c.id === selectedCategory.value)?.tools.some(t => t.id === tool.id)
+    let matchesCategory = true
+    if (selectedCategory.value === 'pinned') {
+      matchesCategory = isPinned(tool.id)
+    } else if (selectedCategory.value !== 'all') {
+      matchesCategory = TOOL_CATEGORIES.find(c => c.id === selectedCategory.value)?.tools.some(t => t.id === tool.id) ?? false
+    }
 
     if (!matchesCategory) return false
     if (!query) return true
@@ -66,6 +86,15 @@ const filteredTools = computed(() => {
         @click="selectedCategory = 'all'"
       />
       <UButton
+        v-if="pinnedToolIds.length > 0"
+        icon="i-lucide-pin"
+        :label="`Pinned (${pinnedToolIds.length})`"
+        :variant="selectedCategory === 'pinned' ? 'solid' : 'ghost'"
+        :color="selectedCategory === 'pinned' ? 'primary' : 'neutral'"
+        size="sm"
+        @click="selectedCategory = 'pinned'"
+      />
+      <UButton
         v-for="cat in TOOL_CATEGORIES"
         :key="cat.id"
         :icon="cat.icon"
@@ -86,7 +115,7 @@ const filteredTools = computed(() => {
         v-for="tool in filteredTools"
         :key="tool.id"
         :to="tool.path"
-        class="group flex flex-col justify-between p-5 rounded-xl border border-default bg-neutral-100/50 dark:bg-neutral-900/50 hover:bg-neutral-100 dark:hover:bg-neutral-900/90 hover:border-primary/50 transition-all hover:shadow-md"
+        class="group flex flex-col justify-between p-5 rounded-xl border border-default bg-neutral-100/50 dark:bg-neutral-900/50 hover:bg-neutral-100 dark:hover:bg-neutral-900/90 hover:border-primary/50 transition-all hover:shadow-md relative"
       >
         <div class="space-y-3">
           <div class="flex items-center justify-between">
@@ -96,14 +125,29 @@ const filteredTools = computed(() => {
                 class="size-5"
               />
             </div>
-            <UBadge
-              v-if="tool.badge"
-              color="primary"
-              variant="subtle"
-              size="xs"
-            >
-              {{ tool.badge }}
-            </UBadge>
+            <div class="flex items-center gap-1.5">
+              <UBadge
+                v-if="tool.badge"
+                color="primary"
+                variant="subtle"
+                size="xs"
+              >
+                {{ tool.badge }}
+              </UBadge>
+              <button
+                type="button"
+                :title="isPinned(tool.id) ? 'Unpin from sidebar' : 'Pin to sidebar'"
+                :aria-label="isPinned(tool.id) ? 'Unpin tool' : 'Pin tool'"
+                class="p-1 rounded-md transition-colors"
+                :class="isPinned(tool.id) ? 'text-primary bg-primary/10 hover:bg-primary/20' : 'text-muted hover:text-highlighted hover:bg-neutral-200 dark:hover:bg-neutral-800 opacity-60 group-hover:opacity-100'"
+                @click="handleTogglePin($event, tool)"
+              >
+                <UIcon
+                  :name="isPinned(tool.id) ? 'i-lucide-pin-off' : 'i-lucide-pin'"
+                  class="size-3.5"
+                />
+              </button>
+            </div>
           </div>
 
           <div>

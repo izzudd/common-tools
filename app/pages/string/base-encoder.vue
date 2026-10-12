@@ -620,6 +620,7 @@ const textStats = computed(() => {
 <template>
   <div class="space-y-6">
     <ToolHeader
+      tool-id="string-base-encoder"
       title="Base Encoder & Decoder"
       description="Encode and decode text, or convert numbers and integers across common bases: Base64, Hex, Binary, Base32, Base58, Base62, Octal."
       icon="i-lucide-binary"
