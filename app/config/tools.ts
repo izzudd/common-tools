@@ -138,6 +138,41 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
         keywords: ['html', 'css', 'preview', 'email', 'playground', 'iframe', 'sandbox', 'render', 'newsletter', 'template']
       }
     ]
+  },
+  {
+    id: 'markdown',
+    name: 'Markdown Tools',
+    description: 'Convert Markdown to HTML, HTML to Markdown, Google Docs paste-ready rich text, and format tables',
+    icon: 'i-lucide-file-text',
+    tools: [
+      {
+        id: 'markdown-live-editor',
+        name: 'Live Preview & Editor',
+        description: 'Real-time Markdown editor with instant live preview, formatting toolbar, and 1-click Google Docs / Word export',
+        path: '/markdown/live-editor',
+        icon: 'i-lucide-eye',
+        badge: 'Live Editor',
+        keywords: ['markdown', 'preview', 'editor', 'live', 'google docs', 'word', 'rich text', 'wysiwyg', 'write', 'notes']
+      },
+      {
+        id: 'markdown-converter',
+        name: 'Markdown & Docs Converter',
+        description: 'Convert Markdown to HTML, HTML to Markdown, and Google Docs / Word copy-paste ready rich text',
+        path: '/markdown/converter',
+        icon: 'i-lucide-file-code',
+        badge: 'Rich Text',
+        keywords: ['markdown', 'html', 'docs', 'google docs', 'word', 'converter', 'rich text', 'paste', 'clipboard', 'wysiwyg']
+      },
+      {
+        id: 'markdown-formatter',
+        name: 'Table Formatter & TOC',
+        description: 'Align and beautify markdown tables, generate linked Table of Contents, and strip syntax to plain text',
+        path: '/markdown/formatter',
+        icon: 'i-lucide-table-properties',
+        badge: 'Utilities',
+        keywords: ['markdown', 'table', 'toc', 'table of contents', 'formatter', 'align', 'strip', 'clean', 'headings']
+      }
+    ]
   }
 ]
 
