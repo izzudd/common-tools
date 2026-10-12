@@ -16,3 +16,4 @@
 - Do not introduce server persistence, remote databases, or backend mutations.
 - Ensure performant handling of large strings and JSON payloads using native browser Web APIs (`Blob`, `TextEncoder`, `JSON.parse/stringify`).
 - All code must pass `bun run lint` (ESLint) and `bun run typecheck` cleanly.
+- **No Fluffy Copy in UI**: Avoid marketing slogans, corporate buzzwords, or fluffy filler metrics like "Privacy & Security: 100% In-Browser Execution" or "Execution Guarantee: 100% Client-Side" in tool stat bars and headers. Keep metrics strictly functional, concise, and focused on actual data properties (e.g. chars, lines, words, bytes, format).

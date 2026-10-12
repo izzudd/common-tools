@@ -304,13 +304,10 @@ const stats = computed(() => {
         </div>
       </div>
       <div>
-        <span class="text-muted block text-[11px]">Execution Guarantee</span>
-        <div class="font-mono mt-0.5 text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
-          <UIcon
-            name="i-lucide-shield-check"
-            class="size-3.5"
-          />
-          100% Client-Side
+        <span class="text-muted block text-[11px]">Characters</span>
+        <div class="font-mono mt-0.5">
+          <strong class="text-highlighted">{{ stats.outChars }}</strong> chars
+          <span class="text-muted text-[11px]">(in: {{ stats.inChars }})</span>
         </div>
       </div>
     </div>
