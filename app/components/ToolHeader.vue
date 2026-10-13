@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useClipboardAction } from '~/composables/useClipboardAction'
-import { usePinnedTools } from '~/composables/usePinnedTools'
 
 const props = withDefaults(
   defineProps<{
@@ -30,21 +29,6 @@ const emit = defineEmits<{
 }>()
 
 const { copied, copyToClipboard } = useClipboardAction()
-const { isPinned, togglePin } = usePinnedTools()
-const toast = useToast()
-
-function handleTogglePin() {
-  if (!props.toolId) return
-  const pinned = togglePin(props.toolId)
-  toast.add({
-    title: pinned ? 'Tool Pinned' : 'Tool Unpinned',
-    description: pinned
-      ? `"${props.title}" is now pinned to the top of your sidebar.`
-      : `"${props.title}" removed from pinned tools.`,
-    color: pinned ? 'primary' : 'neutral',
-    icon: pinned ? 'i-lucide-pin' : 'i-lucide-pin-off'
-  })
-}
 
 async function handleCopy() {
   emit('copy')
@@ -94,16 +78,6 @@ async function handleCopy() {
 
       <!-- Quick Utility Controls -->
       <div class="flex items-center gap-2 flex-wrap self-end sm:self-auto">
-        <UButton
-          v-if="toolId"
-          :icon="isPinned(toolId) ? 'i-lucide-pin-off' : 'i-lucide-pin'"
-          :label="isPinned(toolId) ? 'Unpin Tool' : 'Pin Tool'"
-          :color="isPinned(toolId) ? 'primary' : 'neutral'"
-          :variant="isPinned(toolId) ? 'subtle' : 'outline'"
-          size="sm"
-          @click="handleTogglePin"
-        />
-
         <UButton
           icon="i-lucide-file-text"
           label="Load Sample Data"

@@ -12,14 +12,15 @@ const currentTool = computed(() => {
   return ALL_TOOLS.find(t => t.path === route.path)
 })
 
-function handleToggleCurrentToolPin() {
-  if (!currentTool.value) return
-  const pinned = togglePin(currentTool.value.id)
+function toggleToolPin(toolId: string) {
+  const tool = ALL_TOOLS.find(t => t.id === toolId)
+  if (!tool) return
+  const pinned = togglePin(toolId)
   toast.add({
     title: pinned ? 'Tool Pinned' : 'Tool Unpinned',
     description: pinned
-      ? `"${currentTool.value.name}" is now pinned to the top of your sidebar.`
-      : `"${currentTool.value.name}" removed from pinned tools.`,
+      ? `"${tool.name}" is now pinned to the top of your sidebar.`
+      : `"${tool.name}" removed from pinned tools.`,
     color: pinned ? 'primary' : 'neutral',
     icon: pinned ? 'i-lucide-pin' : 'i-lucide-pin-off'
   })
@@ -49,7 +50,8 @@ const navItems = computed<NavigationMenuItem[]>(() => {
           label: tool.name,
           icon: tool.icon,
           to: tool.path,
-          active: route.path === tool.path
+          active: route.path === tool.path,
+          toolId: tool.id
         }))
       }
     : null
@@ -62,7 +64,8 @@ const navItems = computed<NavigationMenuItem[]>(() => {
       label: tool.name,
       icon: tool.icon,
       to: tool.path,
-      active: route.path === tool.path
+      active: route.path === tool.path,
+      toolId: tool.id
     }))
   }))
 
@@ -118,12 +121,30 @@ const navItems = computed<NavigationMenuItem[]>(() => {
             orientation="vertical"
             :ui="{
               link: [
-                'text-xs py-1.5 px-2.5 rounded-lg font-medium transition-colors',
+                'text-xs py-1.5 px-2.5 rounded-lg font-medium transition-colors group/navitem',
                 state === 'collapsed' && 'justify-center'
               ],
-              childLink: 'text-xs py-1.5 px-2'
+              childLink: 'text-xs py-1.5 px-2 group/navitem'
             }"
-          />
+          >
+            <!-- Hover pin button for tool items in non-collapsed state -->
+            <template #item-trailing="{ item }">
+              <button
+                v-if="state !== 'collapsed' && (item as any).toolId"
+                type="button"
+                :title="isPinned((item as any).toolId) ? 'Unpin tool from top' : 'Pin tool to top'"
+                :aria-label="isPinned((item as any).toolId) ? 'Unpin tool' : 'Pin tool'"
+                class="opacity-0 group-hover/navitem:opacity-100 transition-opacity p-0.5 rounded text-muted hover:text-highlighted focus:opacity-100"
+                :class="isPinned((item as any).toolId) ? 'opacity-100 text-primary hover:text-primary/80' : ''"
+                @click.prevent.stop="toggleToolPin((item as any).toolId)"
+              >
+                <UIcon
+                  :name="isPinned((item as any).toolId) ? 'i-lucide-pin-off' : 'i-lucide-pin'"
+                  class="size-3.5"
+                />
+              </button>
+            </template>
+          </UNavigationMenu>
         </div>
       </template>
 
@@ -192,15 +213,6 @@ const navItems = computed<NavigationMenuItem[]>(() => {
               <span class="font-semibold text-highlighted">
                 {{ currentTool.name }}
               </span>
-              <UButton
-                :icon="isPinned(currentTool.id) ? 'i-lucide-pin-off' : 'i-lucide-pin'"
-                :color="isPinned(currentTool.id) ? 'primary' : 'neutral'"
-                :variant="isPinned(currentTool.id) ? 'subtle' : 'ghost'"
-                size="xs"
-                :title="isPinned(currentTool.id) ? 'Unpin tool from sidebar' : 'Pin tool to top of sidebar'"
-                :aria-label="isPinned(currentTool.id) ? 'Unpin tool' : 'Pin tool'"
-                @click="handleToggleCurrentToolPin"
-              />
             </template>
           </div>
         </div>
