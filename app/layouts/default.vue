@@ -233,7 +233,7 @@ const navItems = computed<NavigationMenuItem[]>(() => {
           </UBadge>
 
           <UButton
-            to="https://github.com"
+            to="https://github.com/izzudd/common-tools"
             target="_blank"
             icon="i-simple-icons-github"
             aria-label="GitHub Repository"
