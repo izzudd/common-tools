@@ -93,6 +93,15 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
         icon: 'i-lucide-binary',
         badge: 'Multi-Base',
         keywords: ['string', 'base', 'base64', 'base32', 'base58', 'base62', 'binary', 'hex', 'octal', 'encode', 'decode', 'radix', 'convert']
+      },
+      {
+        id: 'string-diff',
+        name: 'Text & Git Diff Comparator',
+        description: 'Compare text and code with split side-by-side or unified top-down view just like GitHub and Git diff',
+        path: '/string/diff',
+        icon: 'i-lucide-git-compare',
+        badge: 'Git Style',
+        keywords: ['diff', 'compare', 'git diff', 'text compare', 'side by side', 'unified', 'patch', 'changes', 'merge', 'code diff', 'github']
       }
     ]
   },

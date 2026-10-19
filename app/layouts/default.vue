@@ -2,10 +2,12 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 import { TOOL_CATEGORIES, ALL_TOOLS } from '~/config/tools'
 import { usePinnedTools } from '~/composables/usePinnedTools'
+import { useCommandPalette } from '~/composables/useCommandPalette'
 
 const route = useRoute()
 const sidebarOpen = ref(true)
 const { pinnedToolIds, isPinned, togglePin } = usePinnedTools()
+const { open: openCommandPalette } = useCommandPalette()
 const toast = useToast()
 
 const currentTool = computed(() => {
@@ -217,13 +219,41 @@ const navItems = computed<NavigationMenuItem[]>(() => {
           </div>
         </div>
 
+        <!-- Center Quick Search Bar (VS Code style command palette trigger) -->
+        <button
+          type="button"
+          aria-label="Open Command Palette"
+          class="flex items-center justify-between gap-2 sm:gap-3 px-2.5 sm:px-3 py-1.5 rounded-lg border border-default bg-neutral-100/70 dark:bg-neutral-900/60 hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 hover:border-primary/40 transition-all text-xs text-muted hover:text-highlighted cursor-pointer w-32 sm:w-60 md:w-72 shadow-xs group"
+          @click="openCommandPalette"
+        >
+          <span class="flex items-center gap-2 truncate">
+            <UIcon
+              name="i-lucide-search"
+              class="size-3.5 shrink-0 text-muted group-hover:text-primary transition-colors"
+            />
+            <span class="truncate hidden sm:inline">Search tools, actions...</span>
+            <span class="truncate sm:hidden">Search...</span>
+          </span>
+
+          <div class="flex items-center gap-1 shrink-0">
+            <UKbd
+              value="meta"
+              size="sm"
+            />
+            <UKbd
+              value="P"
+              size="sm"
+            />
+          </div>
+        </button>
+
         <div class="flex items-center gap-2">
           <!-- Client-Only Privacy Tag -->
           <UBadge
             color="success"
             variant="subtle"
             size="sm"
-            class="hidden sm:inline-flex items-center gap-1 font-mono text-[11px]"
+            class="hidden md:inline-flex items-center gap-1 font-mono text-[11px]"
           >
             <UIcon
               name="i-lucide-shield-check"
@@ -250,6 +280,9 @@ const navItems = computed<NavigationMenuItem[]>(() => {
       <main class="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto">
         <slot />
       </main>
+
+      <!-- Command Palette Modal -->
+      <CommandPaletteModal />
     </div>
   </div>
 </template>
