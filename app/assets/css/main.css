@@ -16,3 +16,31 @@
   --color-green-900: #0A5331;
   --color-green-950: #052E16;
 }
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+
+  html {
+    background-color: var(--color-neutral-50, #fafafa);
+    color-scheme: light;
+  }
+
+  html.dark {
+    background-color: var(--color-neutral-950, #0a0a0a);
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-neutral-50, #fafafa);
+    color: var(--color-neutral-900, #171717);
+    overscroll-behavior-y: none;
+  }
+
+  html.dark body {
+    background-color: var(--color-neutral-950, #0a0a0a);
+    color: var(--color-neutral-100, #f5f5f5);
+  }
+}
+

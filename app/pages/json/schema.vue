@@ -404,7 +404,7 @@ const stats = computed(() => {
       </div>
 
       <!-- Right Column: Live Generated Output (5 Cols) -->
-      <div class="lg:col-span-5 flex flex-col rounded-xl border border-default bg-neutral-100/30 dark:bg-neutral-900/40 overflow-hidden sticky top-20">
+      <div class="lg:col-span-5 flex flex-col rounded-xl border border-default bg-neutral-100/30 dark:bg-neutral-900/40 overflow-hidden sticky top-4">
         <div class="flex items-center justify-between px-3.5 py-2.5 border-b border-default bg-neutral-100/60 dark:bg-neutral-900/60 text-xs font-medium text-muted">
           <div class="flex items-center gap-2">
             <span class="font-mono text-[11px] font-semibold text-highlighted uppercase tracking-wider">Generated JSON Schema</span>

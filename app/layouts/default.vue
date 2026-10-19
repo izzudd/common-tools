@@ -78,7 +78,7 @@ const navItems = computed<NavigationMenuItem[]>(() => {
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100">
+  <div class="flex h-dvh bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 overflow-hidden">
     <!-- Collapsible Sidebar -->
     <USidebar
       v-model:open="sidebarOpen"
@@ -186,9 +186,9 @@ const navItems = computed<NavigationMenuItem[]>(() => {
     </USidebar>
 
     <!-- App Main Content Area -->
-    <div class="flex-1 flex flex-col min-w-0">
+    <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
       <!-- Top header bar -->
-      <header class="h-14 border-b border-default bg-neutral-100/40 dark:bg-neutral-900/30 backdrop-blur-md px-4 flex items-center justify-between shrink-0 sticky top-0 z-20">
+      <header class="h-14 border-b border-default bg-neutral-100/40 dark:bg-neutral-900/30 backdrop-blur-md px-4 flex items-center justify-between shrink-0 z-20">
         <div class="flex items-center gap-3">
           <UButton
             icon="i-lucide-panel-left"
@@ -277,8 +277,10 @@ const navItems = computed<NavigationMenuItem[]>(() => {
       </header>
 
       <!-- Page Content -->
-      <main class="flex-1 p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-        <slot />
+      <main class="flex-1 overflow-y-auto overscroll-y-contain">
+        <div class="p-4 md:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+          <slot />
+        </div>
       </main>
 
       <!-- Command Palette Modal -->
