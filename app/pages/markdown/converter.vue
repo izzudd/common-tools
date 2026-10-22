@@ -154,6 +154,34 @@ watch(
   { deep: true, immediate: true }
 )
 
+/**
+ * What the Rich Preview pane renders.
+ *
+ * `output` cannot be used for the Google Docs mode: markdownToDocsHtml() bakes
+ * dark literal colors (#111827 …) into inline styles because that is what the
+ * Google Docs / Word paste engine needs. Rendering that same HTML on screen
+ * paints near-black text on the dark app background, so headings look "always
+ * black". The preview therefore re-renders the markdown as plain semantic HTML
+ * and lets the scoped styles below theme it; the copied / downloaded output
+ * keeps the Docs palette.
+ */
+const previewHtml = computed(() => {
+  if (!output.value) return ''
+  if (draft.value.mode === 'md-to-docs') {
+    return markdownToHtml(draft.value.input.trim(), {
+      gfm: draft.value.gfm,
+      breaks: draft.value.breaks
+    })
+  }
+  if (draft.value.mode === 'html-to-md') {
+    return markdownToHtml(output.value, {
+      gfm: draft.value.gfm,
+      breaks: draft.value.breaks
+    })
+  }
+  return output.value
+})
+
 async function copyForGoogleDocs() {
   const md = draft.value.input.trim()
   if (!md) {
@@ -612,21 +640,18 @@ const stats = computed(() => {
             </div>
 
             <!-- eslint-disable vue/no-v-html -->
-            <!-- If converting HTML to MD, render marked markdown -->
             <div
-              v-if="draft.mode === 'html-to-md'"
               data-markdown-preview
               class="text-xs overflow-auto"
-              v-html="output ? markdownToHtml(output) : '<p class=\'text-muted italic\'>Converted markdown preview will appear here...</p>'"
-            />
-            <!-- If converting MD to HTML / Docs, render output HTML -->
-            <div
-              v-else
-              data-markdown-preview
-              class="text-xs overflow-auto"
-              v-html="output || '<p class=\'text-muted italic\'>Formatted preview will appear here...</p>'"
+              v-html="previewHtml || '<p class=\'text-muted italic\'>Preview will appear here...</p>'"
             />
             <!-- eslint-enable vue/no-v-html -->
+            <p
+              v-if="draft.mode === 'md-to-docs' && output"
+              class="mt-4 pt-3 border-t border-neutral-200 dark:border-neutral-800 text-[11px] text-muted"
+            >
+              Preview follows the app theme. The HTML you copy/download keeps the Google Docs &amp; Word palette.
+            </p>
           </div>
 
           <!-- Raw Code Textarea -->
@@ -668,6 +693,24 @@ const stats = computed(() => {
   font-weight: 600;
   margin-top: 0.75rem;
   margin-bottom: 0.25rem;
+}
+
+[data-markdown-preview] :deep(h4) {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0.6rem;
+  margin-bottom: 0.2rem;
+}
+
+[data-markdown-preview] :deep(hr) {
+  border: 0;
+  border-top: 1px solid rgba(156, 163, 175, 0.35);
+  margin: 1rem 0;
+}
+
+[data-markdown-preview] :deep(img) {
+  max-width: 100%;
+  border-radius: 0.375rem;
 }
 
 [data-markdown-preview] :deep(p) {

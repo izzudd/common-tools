@@ -121,6 +121,27 @@ const isFullscreen = ref(false)
 const refreshKey = ref(0)
 const toast = useToast()
 const { copyToClipboard } = useClipboardAction()
+const colorMode = useColorMode()
+
+/**
+ * The preview canvas has to be painted explicitly. An iframe document without
+ * a background renders a black h1 on a transparent canvas, so with the app in
+ * dark mode every unstyled heading looks black on black. `previewTheme` picks
+ * the theme; `system` follows the app's color mode.
+ */
+const previewDark = computed(() => {
+  if (draft.value.previewTheme === 'dark') return true
+  if (draft.value.previewTheme === 'light') return false
+  return colorMode.value === 'dark'
+})
+
+const baseStyle = computed(() => {
+  const canvas = previewDark.value
+    ? { scheme: 'dark', bg: '#0a0a0a', fg: '#e5e5e5' }
+    : { scheme: 'light', bg: '#ffffff', fg: '#171717' }
+  return `html { color-scheme: ${canvas.scheme}; }
+  body { background-color: ${canvas.bg}; color: ${canvas.fg}; }`
+})
 
 function loadSample() {
   draft.value.html = sampleEmailTemplate
@@ -165,7 +186,8 @@ const compiledDocument = computed(() => {
 <html>
 <head>
   <meta charset="utf-8">
-  <style>
+  <style id="devpocket-base">
+    ${baseStyle.value}
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       display: flex;
@@ -173,14 +195,7 @@ const compiledDocument = computed(() => {
       justify-content: center;
       height: 100vh;
       margin: 0;
-      color: #94a3b8;
-      background-color: #fafafa;
-    }
-    @media (prefers-color-scheme: dark) {
-      body {
-        background-color: #0f172a;
-        color: #64748b;
-      }
+      color: ${previewDark.value ? '#64748b' : '#94a3b8'};
     }
   </style>
 </head>
@@ -193,14 +208,18 @@ const compiledDocument = computed(() => {
 </html>`
   }
 
-  // If input already has <html> or <head>, inject CSS into head or top
+  // If input already has <html> or <head>, inject CSS into head or top.
+  // The base (canvas + default text color) goes first so the user's own CSS
+  // and inline styles still win.
   let doc = rawHtml
+  const baseTag = `<style id="devpocket-base">\n${baseStyle.value}\n</style>`
   const styleTag = customCss ? `<style id="devpocket-custom-css">\n${customCss}\n</style>` : ''
+  const headInjection = `${baseTag}\n${styleTag}`
 
   if (/<head[\s>]/i.test(doc)) {
-    doc = doc.replace(/<head[\s>]/i, match => `${match}\n${styleTag}\n`)
+    doc = doc.replace(/<head[\s>]/i, match => `${match}\n${headInjection}\n`)
   } else if (/<html[\s>]/i.test(doc)) {
-    doc = doc.replace(/<html[\s>]/i, match => `${match}\n<head>${styleTag}</head>\n`)
+    doc = doc.replace(/<html[\s>]/i, match => `${match}\n<head>${headInjection}</head>\n`)
   } else {
     // Fragment without html boilerplate
     doc = `<!DOCTYPE html>
@@ -208,7 +227,7 @@ const compiledDocument = computed(() => {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  ${styleTag}
+  ${headInjection}
 </head>
 <body>
   ${doc}
@@ -231,7 +250,7 @@ function renderIframe() {
 
 // Watch draft changes for live preview
 watch(
-  [() => draft.value.html, () => draft.value.css, refreshKey],
+  [() => draft.value.html, () => draft.value.css, () => previewDark.value, refreshKey],
   () => {
     if (draft.value.autoRefresh) {
       nextTick(() => {
@@ -635,7 +654,7 @@ const stats = computed(() => {
         <!-- Iframe Canvas Viewport Area -->
         <div class="flex-1 bg-neutral-200/40 dark:bg-neutral-950/60 p-4 flex justify-center items-start overflow-auto">
           <div
-            class="transition-all duration-200 bg-white rounded-lg shadow-sm border border-neutral-300 dark:border-neutral-800 overflow-hidden flex flex-col"
+            class="transition-all duration-200 bg-white dark:bg-neutral-950 rounded-lg shadow-sm border border-neutral-300 dark:border-neutral-800 overflow-hidden flex flex-col"
             :style="{
               width: currentIframeWidth,
               maxWidth: '100%',
@@ -664,7 +683,7 @@ const stats = computed(() => {
               ref="iframeRef"
               title="Sandbox HTML Preview"
               sandbox="allow-same-origin"
-              class="w-full flex-1 border-0 min-h-[500px] bg-white"
+              class="w-full flex-1 border-0 min-h-[500px] bg-white dark:bg-neutral-950"
             />
           </div>
         </div>
