@@ -106,6 +106,23 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
     ]
   },
   {
+    id: 'time',
+    name: 'Time Tools',
+    description: 'Convert timestamps across time zones, handle daylight saving, and plan meetings across regions',
+    icon: 'i-lucide-clock',
+    tools: [
+      {
+        id: 'time-converter',
+        name: 'Time Zone Converter',
+        description: 'Convert any time, date-time, ISO string, or epoch into WIB, SGT, PT, UTC and 445 more zones with DST handled',
+        path: '/time/converter',
+        icon: 'i-lucide-globe-2',
+        badge: 'DST-aware',
+        keywords: ['time', 'timezone', 'time zone', 'converter', 'wib', 'sgt', 'pdt', 'pst', 'est', 'utc', 'utc+7', 'epoch', 'unix', 'iso 8601', 'dst', 'daylight saving', 'overlap', 'meeting', 'jam', 'zona waktu']
+      }
+    ]
+  },
+  {
     id: 'table',
     name: 'Table & CSV Tools',
     description: 'Inspect, edit columns, swap headers, and convert tabular data to SQL, JSONL, and TSV',

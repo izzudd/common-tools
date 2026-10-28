@@ -67,7 +67,17 @@ Most online formatters and conversion utilities log your requests or route your 
   - **Live Multi-Base Overview**: Instantaneous preview cards of all base representations with one-click copy.
   - **Number / Radix Conversion**: Convert integers (including arbitrary-precision BigInts) across Base 2, 8, 10, 16, 32, 36, 58, 62, and 64 simultaneously.
 
-### 3. Table & CSV Tools (`/table/*`)
+### 3. Time Tools (`/time/*`)
+- **Time Zone Converter (`/time/converter`)**:
+  - Convert one instant into WIB, WITA, WIT, SGT, PT, ET, CET, IST, JST, UTC and all 445 zones the browser knows.
+  - Accepts clock times (`14:30`, `2:30pm`), date-times (`2026-10-28 14:30`, `28 Oct 2026 14:30`), ISO 8601 with `Z` or `±HH:MM`, and epoch seconds / milliseconds / microseconds / nanoseconds.
+  - Zone suffixes inside the input (`9:00 AM SGT`, `2026-10-28 14:30 PDT`) override the zone picker.
+  - Daylight saving is resolved from `Intl`, showing `PST` vs `PDT`, `CET` vs `CEST`, and rejecting wall-clock times that do not exist on a spring-forward night.
+  - Flags day shifts (`+1 day` / `−1 day`), relative offsets (`−1h vs WIB`), and relative time (`in 3 hours`).
+  - Live ticking clock, `Now` / `±1h` / `Tomorrow` nudges, per-zone copy, and instant copies of epoch s, epoch ms, and ISO 8601.
+  - Overlap planner: a 24-hour lane per zone with local working hours (09–18) shaded, so a meeting slot is readable across regions at a glance.
+
+### 4. Table & CSV Tools (`/table/*`)
 - **Table & CSV Editor (`/table/editor`)**:
   - Review CSV, TSV, or spreadsheet clipboard copies (Ctrl+C / Ctrl+V from Excel / Google Sheets) in an interactive data grid.
   - Inline column header editing and column reordering / swapping.
@@ -80,7 +90,7 @@ Most online formatters and conversion utilities log your requests or route your 
   - Optional `CREATE TABLE`, `DROP TABLE IF EXISTS`, and configurable multi-row `INSERT` batches.
   - Export to **JSON Lines (`.jsonl`)**, **JSON Array**, **TSV**, **Markdown**, **HTML Table**, and **YAML**.
 
-### 4. Ergonomic Developer Experience
+### 5. Ergonomic Developer Experience
 - **Sample Data Pre-loaders**: Quickly test each tool with built-in realistic payloads.
 - **Copy to Clipboard**: One-click copying with automatic toast notifications.
 - **Quick Keyboard Search**: Search tools by name, description, or keyword tags right from the home dashboard.
@@ -169,7 +179,8 @@ common-tools/
 │   ├── pages/             # Tool pages & home directory
 │   │   ├── index.vue      # Tool search & catalog dashboard
 │   │   ├── json/          # JSON utilities
-│   │   └── string/        # String utilities
+│   │   ├── string/        # String utilities
+│   │   └── time/          # Timezone & timestamp utilities
 │   └── types/             # Shared TypeScript interfaces
 ├── nuxt.config.ts         # Nuxt 4 configuration (SSR disabled)
 ├── package.json
