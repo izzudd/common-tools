@@ -1,6 +1,6 @@
 <script setup lang="ts">
 useHead({
-  title: 'DevPocket - Modern Client-Side Developer Utilities',
+  title: 'Quoin - Modern Client-Side Developer Utilities',
   meta: [
     { name: 'viewport', content: 'width=device-width, initial-scale=1' },
     { name: 'description', content: 'Lean, secure, 100% client-side developer utility web app with zero backend persistence.' },

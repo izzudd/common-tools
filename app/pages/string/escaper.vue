@@ -42,7 +42,7 @@ const SAMPLES: Record<Mode, { escape: string, unescape: string }> = {
     unescape: `First Line\\nSecond Line with \\t Tab and \\"double quote\\" and \\'single quote\\' and \\\\backslash\\\\`
   },
   base64: {
-    escape: `DevPocket 🚀: Ultra fast, client-side, zero tracking developer toolkit.`,
+    escape: `Quoin 🚀: Ultra fast, client-side, zero tracking developer toolkit.`,
     unescape: `RGV2UG9ja2V0IPCfmYAgVWx0cmEgZmFzdCwgY2xpZW50LXNpZGUsIHplcm8gdHJhY2tpbmcgZGV2ZWxvcGVyIHRvb2xraXQu`
   }
 }

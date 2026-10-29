@@ -21,7 +21,7 @@ const sampleEmailTemplate = `<!DOCTYPE html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to DevPocket</title>
+  <title>Welcome to Quoin</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f4f4f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f7; padding: 30px 15px;">
@@ -32,7 +32,7 @@ const sampleEmailTemplate = `<!DOCTYPE html>
           <!-- Header Banner -->
           <tr>
             <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 36px 32px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">DevPocket</h1>
+              <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">Quoin</h1>
               <p style="color: #ecfdf5; margin: 8px 0 0 0; font-size: 14px; font-weight: 400;">Your offline-first, client-side developer companion</p>
             </td>
           </tr>
@@ -42,7 +42,7 @@ const sampleEmailTemplate = `<!DOCTYPE html>
             <td style="padding: 36px 32px; color: #334155; font-size: 15px; line-height: 1.6;">
               <h2 style="color: #0f172a; margin: 0 0 16px 0; font-size: 20px; font-weight: 600;">Welcome aboard, Developer! 🚀</h2>
               <p style="margin: 0 0 16px 0;">
-                Thanks for checking out DevPocket. We built this toolkit so you never have to paste sensitive company JSON, credentials, or customer tables into third-party servers again.
+                Thanks for checking out Quoin. We built this toolkit so you never have to paste sensitive company JSON, credentials, or customer tables into third-party servers again.
               </p>
               
               <!-- Feature List Card -->
@@ -87,7 +87,7 @@ const sampleEmailTemplate = `<!DOCTYPE html>
           <!-- Footer -->
           <tr>
             <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px 32px; text-align: center; color: #94a3b8; font-size: 12px;">
-              <p style="margin: 0 0 6px 0;">Sent with love from DevPocket &bull; Zero analytics included</p>
+              <p style="margin: 0 0 6px 0;">Sent with love from Quoin &bull; Zero analytics included</p>
               <p style="margin: 0;">You are receiving this sample because you tested the HTML Email Previewer tool.</p>
             </td>
           </tr>
@@ -186,7 +186,7 @@ const compiledDocument = computed(() => {
 <html>
 <head>
   <meta charset="utf-8">
-  <style id="devpocket-base">
+  <style id="quoin-base">
     ${baseStyle.value}
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -212,8 +212,8 @@ const compiledDocument = computed(() => {
   // The base (canvas + default text color) goes first so the user's own CSS
   // and inline styles still win.
   let doc = rawHtml
-  const baseTag = `<style id="devpocket-base">\n${baseStyle.value}\n</style>`
-  const styleTag = customCss ? `<style id="devpocket-custom-css">\n${customCss}\n</style>` : ''
+  const baseTag = `<style id="quoin-base">\n${baseStyle.value}\n</style>`
+  const styleTag = customCss ? `<style id="quoin-custom-css">\n${customCss}\n</style>` : ''
   const headInjection = `${baseTag}\n${styleTag}`
 
   if (/<head[\s>]/i.test(doc)) {
@@ -671,7 +671,7 @@ const stats = computed(() => {
                   DP
                 </div>
                 <div>
-                  <strong class="text-highlighted block leading-tight">DevPocket Previewer</strong>
+                  <strong class="text-highlighted block leading-tight">Quoin Previewer</strong>
                   <span class="text-[10px] text-muted">&lt;sender@preview.internal&gt;</span>
                 </div>
               </div>

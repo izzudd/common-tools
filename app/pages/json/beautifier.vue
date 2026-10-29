@@ -23,7 +23,7 @@ const errorLocation = ref<{ line: number, column: number } | null>(null)
 const { copied, copyToClipboard } = useClipboardAction()
 
 const sampleJson = `{
-  "app": "DevPocket",
+  "app": "Quoin",
   "version": "1.0.0",
   "secure": true,
   "stats": {

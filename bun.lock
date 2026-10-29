@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "dev-pocket",
+      "name": "quoin",
       "dependencies": {
         "@iconify-json/lucide": "^1.2.139",
         "@iconify-json/simple-icons": "^1.2.98",

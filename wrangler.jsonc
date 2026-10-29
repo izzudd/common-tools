@@ -1,5 +1,6 @@
 {
-  // Cloudflare Workers config for https://tools.izzudd.my.id
+  // Cloudflare Workers config for https://quoin.izzudd.my.id (Worker service keeps the legacy
+  // `common-tools` name — renaming a Workers Builds service would orphan the CI deploy).
   // The site is a fully client-side Nuxt SPA (`ssr: false`), so it is built with
   // `nuxt generate` and served as static assets — no Worker script runs per request.
   "name": "common-tools",

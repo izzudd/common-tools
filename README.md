@@ -1,5 +1,6 @@
-# Common Tools (DevPocket) 🧰
+# Quoin 🧰
 
+[![Live](https://img.shields.io/badge/live-quoin.izzudd.my.id-10B981?labelColor=064e3b)](https://quoin.izzudd.my.id)
 [![Nuxt](https://img.shields.io/badge/Nuxt-4.x-00DC82?logo=nuxt&labelColor=020420)](https://nuxt.com)
 [![Nuxt UI](https://img.shields.io/badge/Nuxt_UI-v4-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38BDF8?logo=tailwindcss&labelColor=0f172a)](https://tailwindcss.com)
@@ -7,13 +8,18 @@
 [![Client-Side Only](https://img.shields.io/badge/Execution-100%25_Client--Side-10B981?logo=shield&labelColor=064e3b)](#-privacy--security-guarantee)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+**Live at [quoin.izzudd.my.id](https://quoin.izzudd.my.id).**
+
 A fast, lightweight, and privacy-first suite of client-side developer utilities. Format JSON, inspect complex payload trees, sanitize strings, encode/decode data, and manipulate text—all without sending a single byte over the wire.
+
+> A *quoin* is the wedge that locks type into a printing forme, and the corner stone that holds a
+> wall true: a small tool that keeps everything in place.
 
 ---
 
 ## 🔒 Privacy & Security Guarantee
 
-Most online formatters and conversion utilities log your requests or route your payloads through remote servers. **Common Tools runs 100% in your browser**:
+Most online formatters and conversion utilities log your requests or route your payloads through remote servers. **Quoin runs 100% in your browser**:
 
 - **Zero Network Transmission**: All operations rely purely on native browser Web APIs and local JavaScript.
 - **Zero Telemetry & Analytics**: No third-party trackers, no cookies, and no logging scripts.
@@ -117,8 +123,8 @@ Ensure you have [Bun](https://bun.sh) installed (`>= 1.3.0`).
 ### 1. Clone the repository
 
 ```bash
-git clone git@github.com:izzudd/common-tools.git
-cd common-tools
+git clone git@github.com:izzudd/quoin.git
+cd quoin
 ```
 
 ### 2. Install dependencies
@@ -170,7 +176,7 @@ bun run typecheck
 ## 📁 Project Structure
 
 ```text
-common-tools/
+quoin/
 ├── app/
 │   ├── assets/css/        # Tailwind CSS entrypoint
 │   ├── components/        # Reusable components (ToolHeader, etc.)

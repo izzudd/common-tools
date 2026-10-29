@@ -1,6 +1,8 @@
 import { ref, computed } from 'vue'
 
-const STORAGE_KEY = 'devpocket:pinned_tools'
+const STORAGE_KEY = 'quoin:pinned_tools'
+// Pre-rename key, read as a fallback so existing pins survive the rename.
+const LEGACY_STORAGE_KEY = 'devpocket:pinned_tools'
 
 // Global reactive reference shared across components
 const pinnedToolIds = ref<string[]>([])
@@ -11,6 +13,7 @@ function initPinnedTools() {
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY)
+        ?? window.localStorage.getItem(LEGACY_STORAGE_KEY)
       if (stored) {
         const parsed = JSON.parse(stored)
         if (Array.isArray(parsed)) {

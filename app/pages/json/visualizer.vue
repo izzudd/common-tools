@@ -24,7 +24,7 @@ const sampleData = `{
   "user": {
     "id": 1042,
     "name": "Alex Mercer",
-    "email": "alex.mercer@devpocket.internal",
+    "email": "alex.mercer@quoin.internal",
     "verified": true,
     "roles": ["developer", "admin"],
     "preferences": {

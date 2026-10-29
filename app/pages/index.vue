@@ -49,7 +49,7 @@ const filteredTools = computed(() => {
     <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-neutral-900 to-neutral-800 text-white p-8 md:p-10 shadow-lg border border-neutral-700/60">
       <div class="relative z-10 max-w-2xl space-y-4">
         <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">
-          DevPocket
+          Quoin
         </h1>
         <p class="text-neutral-300 text-sm md:text-base leading-relaxed">
           Fast, elegant, and secure browser-based developer utilities. All data transformations happen with zero latency.

@@ -75,7 +75,7 @@ const groups = computed<CommandPaletteGroup[]>(() => {
     {
       id: 'action-home',
       label: 'Go to Overview & Hub',
-      description: 'Navigate to DevPocket dashboard and full tool catalog',
+      description: 'Navigate to Quoin dashboard and full tool catalog',
       icon: 'i-lucide-layout-grid',
       to: '/',
       keywords: 'home dashboard hub overview start'
@@ -93,9 +93,9 @@ const groups = computed<CommandPaletteGroup[]>(() => {
     {
       id: 'action-github',
       label: 'Open GitHub Repository',
-      description: 'View DevPocket source code and contribute on GitHub',
+      description: 'View Quoin source code and contribute on GitHub',
       icon: 'i-simple-icons-github',
-      to: 'https://github.com/izzudd/common-tools',
+      to: 'https://github.com/izzudd/quoin',
       target: '_blank',
       keywords: 'github repo source code repository star git'
     }

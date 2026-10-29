@@ -63,9 +63,9 @@ Respect privacy by avoiding unnecessary remote beacon tracking.
 ## Summary & Checklist
 Keep it lean, keep it fast, and keep it safe.`
 
-const sampleForStrip = `# 🎯 Welcome to **DevPocket**
+const sampleForStrip = `# 🎯 Welcome to **Quoin**
 
-DevPocket is an *offline-first* suite of developer tools!
+Quoin is an *offline-first* suite of developer tools!
 
 - ⚡ **Zero backend**: Everything executes in your browser.
 - 📦 **No dependencies bloat**: Uses native Web APIs.
