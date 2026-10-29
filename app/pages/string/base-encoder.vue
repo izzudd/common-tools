@@ -45,7 +45,7 @@ const errorMessage = ref<string | null>(null)
 const { copied, copyToClipboard } = useClipboardAction()
 
 // Text sample
-const sampleText = `DevPocket 🚀: Ultra fast, client-side, zero tracking developer toolkit.`
+const sampleText = `Quoin 🚀: Ultra fast, client-side, zero tracking developer toolkit.`
 const sampleNumber = '1048576'
 
 // --- Text Encoding / Decoding Utilities ---

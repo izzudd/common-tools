@@ -21,7 +21,7 @@ interface LiveEditorDraft {
 
 const defaultSample = `# 🚀 Live Markdown Editor & Docs Exporter
 
-Welcome to **DevPocket's Markdown Live Preview**! Write markdown on the left, and watch the live preview update in real-time on the right.
+Welcome to **Quoin's Markdown Live Preview**! Write markdown on the left, and watch the live preview update in real-time on the right.
 
 ---
 
@@ -31,7 +31,7 @@ Welcome to **DevPocket's Markdown Live Preview**! Write markdown on the left, an
 - **GFM Ready**: Task lists, strikethrough, tables, and blockquotes.
 
 ### 📊 Benchmark Comparison Table
-| Feature | DevPocket | Cloud Tools |
+| Feature | Quoin | Cloud Tools |
 | :--- | :---: | :---: |
 | Data Privacy | 🔒 100% Client-Side | ⚠️ Stored in DB |
 | Offline Access | ✅ Instant | ❌ Needs Network |

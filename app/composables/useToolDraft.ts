@@ -1,6 +1,8 @@
 import type { Ref } from 'vue'
 
-const STORAGE_PREFIX = 'devpocket:draft:'
+const STORAGE_PREFIX = 'quoin:draft:'
+// Pre-rename key, read as a fallback so existing drafts survive the rename.
+const LEGACY_STORAGE_PREFIX = 'devpocket:draft:'
 
 /**
  * Creates a reactive state synchronized with localStorage.
@@ -22,6 +24,7 @@ export function useToolDraft<T>(
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const stored = window.localStorage.getItem(storageKey)
+        ?? window.localStorage.getItem(`${LEGACY_STORAGE_PREFIX}${toolId}`)
       if (stored !== null) {
         state.value = JSON.parse(stored) as T
       }

@@ -106,7 +106,7 @@ const navItems = computed<NavigationMenuItem[]>(() => {
             v-if="state !== 'collapsed'"
             class="flex flex-col truncate"
           >
-            <span class="font-bold tracking-tight text-sm text-highlighted">DevPocket</span>
+            <span class="font-bold tracking-tight text-sm text-highlighted">Quoin</span>
             <span class="text-[10px] text-muted font-medium uppercase tracking-wider">Client Utilities</span>
           </div>
         </NuxtLink>
@@ -263,7 +263,7 @@ const navItems = computed<NavigationMenuItem[]>(() => {
           </UBadge>
 
           <UButton
-            to="https://github.com/izzudd/common-tools"
+            to="https://github.com/izzudd/quoin"
             target="_blank"
             icon="i-simple-icons-github"
             aria-label="GitHub Repository"

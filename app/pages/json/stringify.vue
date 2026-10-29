@@ -22,12 +22,12 @@ const errorMessage = ref<string | null>(null)
 const { copied, copyToClipboard } = useClipboardAction()
 
 const sampleJson = `{
-  "name": "DevPocket",
+  "name": "Quoin",
   "features": ["zero-latency", "client-only"],
   "meta": { "active": true, "code": 200 }
 }`
 
-const sampleEscapedString = `"{\\"name\\":\\"DevPocket\\",\\"features\\":[\\"zero-latency\\",\\"client-only\\"],\\"meta\\":{\\"active\\":true,\\"code\\":200}}"`
+const sampleEscapedString = `"{\\"name\\":\\"Quoin\\",\\"features\\":[\\"zero-latency\\",\\"client-only\\"],\\"meta\\":{\\"active\\":true,\\"code\\":200}}"`
 
 function loadSample() {
   if (draft.value.conversionMode === 'stringify') {

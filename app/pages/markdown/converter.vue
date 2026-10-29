@@ -39,7 +39,7 @@ const toast = useToast()
 
 const sampleMarkdown = `# 🚀 Project Overview & Architecture
 
-Welcome to **DevPocket**! A client-side, privacy-first companion built for modern engineers.
+Welcome to **Quoin**! A client-side, privacy-first companion built for modern engineers.
 
 ## Key Highlights
 - **100% Client-Side**: Zero telemetry, zero cloud database leaks.
@@ -59,7 +59,7 @@ Check out [Google Docs](https://docs.google.com) to test copy-pasting styled ric
 
 const sampleHtml = `<div class="container">
   <h1>🚀 Project Overview & Architecture</h1>
-  <p>Welcome to <strong>DevPocket</strong>! A client-side, privacy-first companion built for modern engineers.</p>
+  <p>Welcome to <strong>Quoin</strong>! A client-side, privacy-first companion built for modern engineers.</p>
   
   <h2>Key Highlights</h2>
   <ul>
