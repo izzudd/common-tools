@@ -15,7 +15,7 @@ export const AUTHOR_URL = 'https://izzudd.my.id'
 
 export const HOME_TITLE = 'Quoin — privacy-first developer tools'
 
-export const HOME_DESCRIPTION = 'Seventeen developer tools that run 100% in your browser: JSON formatter & schema builder, encoders, slugifier, timezone converter, CSV tables, Markdown. No uploads, no accounts, no telemetry.'
+export const HOME_DESCRIPTION = 'Developer tools that run 100% in your browser: JSON formatter & schema builder, encoders, slugifier, timezone converter, CSV tables, Markdown. No uploads, no accounts, no telemetry.'
 
 export function toolTitle(tool: Pick<ToolItem, 'name'>) {
   return `${tool.name} — Quoin`
