@@ -12,6 +12,8 @@
 
 A fast, lightweight, and privacy-first suite of client-side developer utilities. Format JSON, inspect complex payload trees, sanitize strings, encode/decode data, and manipulate text—all without sending a single byte over the wire.
 
+[![The Quoin tool hub](docs/screenshot-home.png)](https://quoin.izzudd.my.id)
+
 > A *quoin* is the wedge that locks type into a printing forme, and the corner stone that holds a
 > wall true: a small tool that keeps everything in place.
 
@@ -28,6 +30,8 @@ Most online formatters and conversion utilities log your requests or route your 
 ---
 
 ## ✨ Features & Included Utilities
+
+[![The JSON beautifier with a sample payload](docs/screenshot-json-beautifier.png)](https://quoin.izzudd.my.id/json/beautifier)
 
 ### 1. JSON Tools (`/json/*`)
 - **Beautifier & Minifier (`/json/beautifier`)**:
@@ -171,6 +175,18 @@ Run TypeScript verification:
 bun run typecheck
 ```
 
+### Social Cards & SEO
+
+The app is `ssr: false`, so Nuxt ships a bare HTML shell — no `<title>`, no description, no Open
+Graph tags, which means a shared link renders as a naked URL. `bun run build` therefore ends with
+`scripts/postbuild.ts`, which walks the generated HTML and bakes a static `<head>` into every route
+(title, description, canonical, Open Graph/Twitter card pointing at `public/og.png`, JSON-LD), sets
+`<html lang>`, and writes `robots.txt` + `sitemap.xml`.
+
+Copy lives in `app/config/site.ts` and `app/config/tools.ts` — the same values are read at build time
+by the postbuild script and at runtime by `app.vue`, so titles never drift. Add a tool to the
+registry and it appears in the sitemap and gets its own card automatically.
+
 ---
 
 ## 📁 Project Structure
@@ -180,7 +196,7 @@ quoin/
 ├── app/
 │   ├── assets/css/        # Tailwind CSS entrypoint
 │   ├── components/        # Reusable components (ToolHeader, etc.)
-│   ├── config/            # Centralized tool registry (tools.ts)
+│   ├── config/            # Centralized tool registry (tools.ts) + site copy (site.ts)
 │   ├── layouts/           # Default layout with responsive sidebar
 │   ├── pages/             # Tool pages & home directory
 │   │   ├── index.vue      # Tool search & catalog dashboard
@@ -188,6 +204,9 @@ quoin/
 │   │   ├── string/        # String utilities
 │   │   └── time/          # Timezone & timestamp utilities
 │   └── types/             # Shared TypeScript interfaces
+├── docs/                  # README screenshots
+├── public/                # Static assets (favicon, og.png social card)
+├── scripts/postbuild.ts   # Bakes static <head> + sitemap into the built SPA
 ├── nuxt.config.ts         # Nuxt 4 configuration (SSR disabled)
 ├── package.json
 └── README.md
